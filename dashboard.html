@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="dashboard-body">
+
+  <div class="dashboard-container">
+    
+   
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <h2>NEXT<span>STOP</span></h2>
+        <p>BGC BUS TRACKER</p>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active">
+          <i class="fa-solid fa-map-location-dot"></i>
+          <span>Routes & Map</span>
+        </a>
+        <a href="#" class="nav-item">
+          <i class="fa-solid fa-bus"></i>
+          <span>Bus Stops</span>
+        </a>
+        <a href="#" class="nav-item">
+          <i class="fa-regular fa-comment-dots"></i>
+          <span>Feedback</span>
+        </a>
+        <a href="#" class="nav-item">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          <span>History</span>
+        </a>
+      </nav>
+
+      <!-- Live Bus Status Widget -->
+      <div class="live-status-card">
+        <h3>Live Bus Status</h3>
+        <ul class="status-list">
+          <li>
+            <span class="dot dot-green"></span>
+            <span class="bus-name">BGC Express</span>
+            <span class="eta text-green">4 min</span>
+          </li>
+          <li>
+            <span class="dot dot-blue"></span>
+            <span class="bus-name">Uptown Shutter</span>
+            <span class="eta text-blue">7 min</span>
+          </li>
+          <li>
+            <span class="dot dot-orange"></span>
+            <span class="bus-name">Venice Loop</span>
+            <span class="eta text-orange">11 min</span>
+          </li>
+          <li>
+            <span class="dot dot-purple"></span>
+            <span class="bus-name">Bonifacio Link</span>
+            <span class="eta text-green">3 min</span>
+          </li>
+        </ul>
+      </div>
+
+     
+      <div class="sidebar-user">
+        <div class="user-avatar">
+          <i class="fa-solid fa-user"></i>
+        </div>
+        <div class="user-info">
+          <span class="user-name" id="sidebar-username">User Account</span>
+          <span class="user-role">Passenger</span>
+        </div>
+      </div>
+    </aside>
+
+   
+    <main class="main-dashboard">
+      
+    
+      <header class="dashboard-header">
+        <h1>Route & Map</h1>
+        <div class="header-actions">
+          <button class="icon-btn" title="Notifications">
+            <i class="fa-regular fa-bell"></i>
+          </button>
+          <button id="logout-btn" class="btn-logout-head">
+            <i class="fa-solid fa-right-from-bracket"></i> Log Out
+          </button>
+        </div>
+      </header>
+
+  
+      <div class="dashboard-grid">
+      
+        <section class="controls-column">
+          
+
+          <div class="search-box">
+            <div class="input-field-icon">
+              <span class="dot dot-green"></span>
+              <input type="text" placeholder="From-e.g Caloocan" value="From-e.g Caloocan">
+            </div>
+            <div class="input-field-icon">
+              <span class="dot dot-red"></span>
+              <input type="text" placeholder="To-e.g VGC" value="To-e.g VGC">
+            </div>
+            <button class="btn-find-routes">Find Routes</button>
+          </div>
+
+          <div class="best-match-banner">
+            <div class="match-icon"><i class="fa-solid fa-check"></i></div>
+            <div>
+              <strong>Best match: BGC Express</strong>
+              <p>SM Aurora Premier &rarr; High Street Central. ETA 4 min</p>
+            </div>
+          </div>
+
+  
+          <div class="routes-section">
+            <span class="section-subtitle">ALL ROUTES</span>
+
+
+            <div class="route-card active-card">
+              <div class="card-header">
+                <span class="route-title">
+                  <span class="dot dot-green"></span>
+                  <strong>BGC Express</strong> <small>BGC-101</small>
+                </span>
+                <span class="badge badge-green">ON TIME</span>
+              </div>
+              <p class="route-stops">SM Aurora Premier &rarr; High Street Central</p>
+              <div class="card-footer">
+                <span class="eta-text text-green">ETA 4 min</span>
+                <span class="frequency">Every 8 min</span>
+                <div class="capacity-bar"><div class="fill fill-green" style="width: 30%;"></div></div>
+                <span class="capacity-num">12/40</span>
+              </div>
+            </div>
+
+
+            <div class="route-card">
+              <div class="card-header">
+                <span class="route-title">
+                  <span class="dot dot-blue"></span>
+                  <strong>Uptown Shutter</strong> <small>BGC-204</small>
+                </span>
+                <span class="badge badge-green">ON TIME</span>
+              </div>
+              <p class="route-stops">SM Aurora Premier &rarr; High Street Central</p>
+              <div class="card-footer">
+                <span class="eta-text text-green">ETA 7 min</span>
+                <span class="frequency">Every 12 min</span>
+                <div class="capacity-bar"><div class="fill fill-blue" style="width: 70%;"></div></div>
+                <span class="capacity-num">28/40</span>
+              </div>
+            </div>
+
+  
+            <div class="route-card">
+              <div class="card-header">
+                <span class="route-title">
+                  <span class="dot dot-orange"></span>
+                  <strong>Venice Loop</strong> <small>BGC-317</small>
+                </span>
+                <span class="badge badge-orange">DELAY</span>
+              </div>
+              <p class="route-stops">SM Aurora Premier &rarr; High Street Central</p>
+              <div class="card-footer">
+                <span class="eta-text text-green">ETA 11 min</span>
+                <span class="frequency">Every 15 min</span>
+                <div class="capacity-bar"><div class="fill fill-orange" style="width: 15%;"></div></div>
+                <span class="capacity-num">5/40</span>
+              </div>
+            </div>
+
+
+            <div class="route-card">
+              <div class="card-header">
+                <span class="route-title">
+                  <span class="dot dot-purple"></span>
+                  <strong>Bonifacio Link</strong> <small>BGC-409</small>
+                </span>
+                <span class="badge badge-green">ON TIME</span>
+              </div>
+              <p class="route-stops">SM Aurora Premier &rarr; High Street Central</p>
+              <div class="card-footer">
+                <span class="eta-text text-green">ETA 3 min</span>
+                <span class="frequency">Every 10 min</span>
+                <div class="capacity-bar"><div class="fill fill-purple" style="width: 82%;"></div></div>
+                <span class="capacity-num">33/40</span>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+    
+        <section class="map-column">
+          <div id="map-container"></div>
+        </section>
+
+      </div>
+    </main>
+
+  </div>
+
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 1. Session Guard & Username Display
+      try {
+        const response = await fetch('/api/session');
+        const data = await response.json();
+
+        if (!data.loggedIn) {
+          alert('Unauthorized access! Please log in first.');
+          window.location.href = 'log_in.html';
+          return;
+        }
+
+        const usernameElem = document.getElementById('sidebar-username');
+        if (usernameElem && data.username) {
+          usernameElem.textContent = data.username;
+        }
+      } catch (err) {
+        window.location.href = 'log_in.html';
+        return;
+      }
+
+
+      const logoutBtn = document.getElementById('logout-btn');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
+          await fetch('/api/logout', { method: 'POST' });
+          window.location.href = 'log_in.html';
+        });
+      }
+
+      const map = L.map('map-container').setView([14.5515, 121.0505], 15);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+
+      // Add Sample Bus Marker
+      L.marker([14.5515, 121.0505]).addTo(map)
+        .bindPopup('<b>BGC Express (BGC-101)</b><br>On Time - High Street Central')
+        .openPopup();
+    });
+  </script>
+</body>
+</html>
