@@ -189,11 +189,11 @@ function showNotification(message, type = "error") {
     document.body.insertBefore(notification, document.body.firstChild);
   }
 
-  // Dismiss on close button click
+
   const closeBtn = notification.querySelector(".notif-close");
   closeBtn.addEventListener("click", () => notification.remove());
 
-  // Auto disappear after 5 seconds
+
   setTimeout(() => {
     if (notification && notification.parentNode) {
       notification.remove();
@@ -215,4 +215,5 @@ function showNotification(message, type = "error") {
       window.location.href = "/api/auth/facebook";
     });
   }
+  
 });

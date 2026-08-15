@@ -12,6 +12,66 @@
   <link rel="stylesheet" href="style.css">
   <script src="script.js" defer></script>
 </head>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // 1. Extract the secret token from the URL query string (?token=...)
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+
+    if (!token) {
+      alert('Invalid or missing password reset token. Please request a new link.');
+      window.location.href = 'forgot_pass.html';
+      return;
+    }
+
+    // 2. Form controls
+    const newPasswordInput = document.querySelector('input[name="newPassword"]') || document.querySelectorAll('input[type="password"]')[0];
+    const confirmPasswordInput = document.querySelector('input[name="confirmPassword"]') || document.querySelectorAll('input[type="password"]')[1];
+    const submitBtn = document.querySelector('button');
+
+    submitBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+
+      const newPassword = newPasswordInput.value;
+      const confirmPassword = confirmPasswordInput ? confirmPasswordInput.value : newPassword;
+
+      if (!newPassword) {
+        alert('Please enter a new password.');
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        alert('Passwords do not match!');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Updating...';
+
+      try {
+        const response = await fetch('/api/reset-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, newPassword })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to reset password.');
+        }
+
+        alert(data.message); // "Password updated successfully! Redirecting to login..."
+        window.location.href = 'log_in.html'; // Redirect to login page
+
+      } catch (err) {
+        alert(err.message);
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Reset Password';
+      }
+    });
+  });
+</script>
 <body>
 
   <main class="web-container">
@@ -41,6 +101,7 @@
       </div>
     </section>
   </main>
+  
 
 </body>
 </html>

@@ -12,6 +12,61 @@
   <link rel="stylesheet" href="style.css">
   <script src="script.js" defer></script>
 </head>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const emailInput = document.querySelector('input[type="email"]');
+    const submitBtn = document.querySelector('button');
+
+    submitBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+
+      const email = emailInput.value.trim();
+
+      if (!email) {
+        alert('Please enter your email address.');
+        return;
+      }
+
+      
+      submitBtn.disabled = true;
+      const originalBtnText = submitBtn.textContent;
+      submitBtn.textContent = 'Sending Link...';
+
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+      try {
+        const response = await fetch('/api/forgot-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to send reset link.');
+        }
+
+        alert(data.message);
+        emailInput.value = '';
+
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          alert('Request timed out! Please check your server terminal or Gmail credentials.');
+        } else {
+          alert(err.message);
+        }
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalBtnText;
+      }
+    });
+  });
+</script>
 <body>
 
   <main class="web-container">
