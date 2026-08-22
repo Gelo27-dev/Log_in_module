@@ -1,101 +1,116 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Forgot Password</title>
-  
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Poppins:wght@300;400;700&display=swap" rel="stylesheet">
-  
-  <link rel="stylesheet" href="style.css">
-  <script src="script.js" defer></script>
-</head>
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const emailInput = document.querySelector('input[type="email"]');
-    const submitBtn = document.querySelector('button');
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Forgot Password</title>
 
-    submitBtn.addEventListener('click', async (e) => {
-      e.preventDefault();
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Poppins:wght@300;400;700&display=swap"
+      rel="stylesheet"
+    />
 
-      const email = emailInput.value.trim();
+    <link rel="stylesheet" href="style.css" />
+    <script src="script.js" defer></script>
+  </head>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const emailInput = document.querySelector('input[type="email"]');
+      const submitBtn = document.querySelector("button");
 
-      if (!email) {
-        alert('Please enter your email address.');
-        return;
-      }
+      submitBtn.addEventListener("click", async (e) => {
+        e.preventDefault();
 
-      
-      submitBtn.disabled = true;
-      const originalBtnText = submitBtn.textContent;
-      submitBtn.textContent = 'Sending Link...';
+        const email = emailInput.value.trim();
 
-      
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 12000);
-
-      try {
-        const response = await fetch('/api/forgot-password', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email }),
-          signal: controller.signal
-        });
-
-        clearTimeout(timeoutId);
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to send reset link.');
+        if (!email) {
+          alert("Please enter your email address.");
+          return;
         }
 
-        alert(data.message);
-        emailInput.value = '';
+        submitBtn.disabled = true;
+        const originalBtnText = submitBtn.textContent;
+        submitBtn.textContent = "Sending Link...";
 
-      } catch (err) {
-        if (err.name === 'AbortError') {
-          alert('Request timed out! Please check your server terminal or Gmail credentials.');
-        } else {
-          alert(err.message);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+        try {
+          const response = await fetch("/api/forgot-password", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email }),
+            signal: controller.signal,
+          });
+
+          clearTimeout(timeoutId);
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.error || "Failed to send reset link.");
+          }
+
+          alert(data.message);
+          emailInput.value = "";
+        } catch (err) {
+          if (err.name === "AbortError") {
+            alert(
+              "Request timed out! Please check your server terminal or Gmail credentials.",
+            );
+          } else {
+            alert(err.message);
+          }
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalBtnText;
         }
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = originalBtnText;
-      }
+      });
     });
-  });
-</script>
-<body>
+  </script>
+  <body>
+    <div id="notification-container"></div>
 
-  <main class="web-container">
-    <section class="hero-panel">
-      <div class="logo-container">
-        <img src="assets/logo-nextstop.png" alt="NextStop BGC Logo" class="brand-logo">
-      </div>
-    </section>
+    <main class="web-container">
+      <section class="hero-panel">
+        <div class="logo-container">
+          <img
+            src="assets/logo-nextstop.png"
+            alt="NextStop BGC Logo"
+            class="brand-logo"
+          />
+        </div>
+      </section>
 
-    <section class="form-panel">
-      <div class="content-box">
-        <h1 class="main-title">Forgot Password</h1>
-        <p class="main-description text-bold">
-          Enter your email address to receive a password reset link.
-        </p>
+      <section class="form-panel">
+        <div class="content-box">
+          <h1 class="main-title">Forgot Password</h1>
+          <p class="main-description text-bold">
+            Enter your email address to receive a password reset link.
+          </p>
 
-        <form class="login-form">
-          <div class="input-group">
-            <label for="reset-email">EMAIL ADDRESS</label>
-            <input type="email" id="reset-email" placeholder="Enter your registered email" required>
-          </div>
+          <form class="login-form">
+            <div class="input-group">
+              <label for="reset-email">EMAIL ADDRESS</label>
+              <input
+                type="email"
+                id="reset-email"
+                placeholder="Enter your registered email"
+                required
+              />
+            </div>
 
-          <button type="submit" class="btn btn-login form-submit-btn">Send Reset Link</button>
-        </form>
+            <button type="submit" class="btn btn-login form-submit-btn">
+              Send Reset Link
+            </button>
+          </form>
 
-        <a href="log_in.html" class="back-link">&longleftarrow; Back to Login</a>
-      </div>
-    </section>
-  </main>
-
-</body>
+          <a href="log_in.html" class="back-link"
+            >&longleftarrow; Back to Login</a
+          >
+        </div>
+      </section>
+    </main>
+  </body>
 </html>

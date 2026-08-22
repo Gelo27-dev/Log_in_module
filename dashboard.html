@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body class="dashboard-body">
+  <div id="notification-container"></div>
 
   <div class="dashboard-container">
     
@@ -29,23 +30,23 @@
         <p>BGC BUS TRACKER</p>
       </div>
 
-      <nav class="sidebar-nav">
-        <a href="#" class="nav-item active">
+      <nav class="sidebar-nav" aria-label="Main navigation">
+        <button type="button" class="nav-item active" data-view="routes">
           <i class="fa-solid fa-map-location-dot"></i>
           <span>Routes & Map</span>
-        </a>
-        <a href="#" class="nav-item">
+        </button>
+        <button type="button" class="nav-item" data-view="stops">
           <i class="fa-solid fa-bus"></i>
           <span>Bus Stops</span>
-        </a>
-        <a href="#" class="nav-item">
+        </button>
+        <button type="button" class="nav-item" data-view="feedback">
           <i class="fa-regular fa-comment-dots"></i>
           <span>Feedback</span>
-        </a>
-        <a href="#" class="nav-item">
+        </button>
+        <button type="button" class="nav-item" data-view="history">
           <i class="fa-solid fa-clock-rotate-left"></i>
           <span>History</span>
-        </a>
+        </button>
       </nav>
 
       <!-- Live Bus Status Widget -->
@@ -89,10 +90,8 @@
 
    
     <main class="main-dashboard">
-      
-    
       <header class="dashboard-header">
-        <h1>Route & Map</h1>
+        <h1 id="view-title">Route & Map</h1>
         <div class="header-actions">
           <button class="icon-btn" title="Notifications">
             <i class="fa-regular fa-bell"></i>
@@ -103,116 +102,138 @@
         </div>
       </header>
 
-  
-      <div class="dashboard-grid">
-      
-        <section class="controls-column">
-          
+      <div class="view-panel active" data-view-panel="routes">
+        <div class="dashboard-grid">
+          <section class="controls-column">
+            <div class="search-box">
+              <div class="input-field-icon">
+                <span class="dot dot-green"></span>
+                <input type="text" placeholder="From-e.g Caloocan" value="From-e.g Caloocan">
+              </div>
+              <div class="input-field-icon">
+                <span class="dot dot-red"></span>
+                <input type="text" placeholder="To-e.g VGC" value="To-e.g VGC">
+              </div>
+              <button class="btn-find-routes">Find Routes</button>
+            </div>
 
-          <div class="search-box">
-            <div class="input-field-icon">
-              <span class="dot dot-green"></span>
-              <input type="text" placeholder="From-e.g Caloocan" value="From-e.g Caloocan">
+            <div class="best-match-banner">
+              <div class="match-icon"><i class="fa-solid fa-check"></i></div>
+              <div>
+                <strong>Best match: BGC Express</strong>
+                <p>SM Aurora Premier &rarr; High Street Central. ETA 4 min</p>
+              </div>
             </div>
-            <div class="input-field-icon">
-              <span class="dot dot-red"></span>
-              <input type="text" placeholder="To-e.g VGC" value="To-e.g VGC">
+
+            <div class="routes-section">
+              <span class="section-subtitle">ALL ROUTES</span>
+
+              <div class="route-card active-card">
+                <div class="card-header">
+                  <span class="route-title">
+                    <span class="dot dot-green"></span>
+                    <strong>BGC Express</strong> <small>BGC-101</small>
+                  </span>
+                  <span class="badge badge-green">ON TIME</span>
+                </div>
+                <p class="route-stops">SM Aurora Premier &rarr; High Street Central</p>
+                <div class="card-footer">
+                  <span class="eta-text text-green">ETA 4 min</span>
+                  <span class="frequency">Every 8 min</span>
+                  <div class="capacity-bar"><div class="fill fill-green" style="width: 30%;"></div></div>
+                  <span class="capacity-num">12/40</span>
+                </div>
+              </div>
+
+              <div class="route-card">
+                <div class="card-header">
+                  <span class="route-title">
+                    <span class="dot dot-blue"></span>
+                    <strong>Uptown Shutter</strong> <small>BGC-204</small>
+                  </span>
+                  <span class="badge badge-green">ON TIME</span>
+                </div>
+                <p class="route-stops">SM Aurora Premier &rarr; High Street Central</p>
+                <div class="card-footer">
+                  <span class="eta-text text-green">ETA 7 min</span>
+                  <span class="frequency">Every 12 min</span>
+                  <div class="capacity-bar"><div class="fill fill-blue" style="width: 70%;"></div></div>
+                  <span class="capacity-num">28/40</span>
+                </div>
+              </div>
+
+              <div class="route-card">
+                <div class="card-header">
+                  <span class="route-title">
+                    <span class="dot dot-orange"></span>
+                    <strong>Venice Loop</strong> <small>BGC-317</small>
+                  </span>
+                  <span class="badge badge-orange">DELAY</span>
+                </div>
+                <p class="route-stops">SM Aurora Premier &rarr; High Street Central</p>
+                <div class="card-footer">
+                  <span class="eta-text text-green">ETA 11 min</span>
+                  <span class="frequency">Every 15 min</span>
+                  <div class="capacity-bar"><div class="fill fill-orange" style="width: 15%;"></div></div>
+                  <span class="capacity-num">5/40</span>
+                </div>
+              </div>
+
+              <div class="route-card">
+                <div class="card-header">
+                  <span class="route-title">
+                    <span class="dot dot-purple"></span>
+                    <strong>Bonifacio Link</strong> <small>BGC-409</small>
+                  </span>
+                  <span class="badge badge-green">ON TIME</span>
+                </div>
+                <p class="route-stops">SM Aurora Premier &rarr; High Street Central</p>
+                <div class="card-footer">
+                  <span class="eta-text text-green">ETA 3 min</span>
+                  <span class="frequency">Every 10 min</span>
+                  <div class="capacity-bar"><div class="fill fill-purple" style="width: 82%;"></div></div>
+                  <span class="capacity-num">33/40</span>
+                </div>
+              </div>
             </div>
-            <button class="btn-find-routes">Find Routes</button>
+          </section>
+
+          <section class="map-column">
+            <div id="map-container"></div>
+          </section>
+        </div>
+      </div>
+
+      <div class="view-panel" data-view-panel="stops">
+        <div class="content-panel">
+          <h3>Bus Stops</h3>
+          <div class="info-list">
+            <div class="info-card"><strong>SM Aurora Premier</strong><span>Active stop • 2 min away</span></div>
+            <div class="info-card"><strong>High Street Central</strong><span>Popular stop • 4 min away</span></div>
+            <div class="info-card"><strong>Bonifacio Global City Gate</strong><span>Transfer hub • 6 min away</span></div>
           </div>
+        </div>
+      </div>
 
-          <div class="best-match-banner">
-            <div class="match-icon"><i class="fa-solid fa-check"></i></div>
-            <div>
-              <strong>Best match: BGC Express</strong>
-              <p>SM Aurora Premier &rarr; High Street Central. ETA 4 min</p>
-            </div>
+      <div class="view-panel" data-view-panel="feedback">
+        <div class="content-panel">
+          <h3>Feedback</h3>
+          <form class="feedback-form">
+            <textarea placeholder="Share your feedback about bus service, route timing, or cleanliness..."></textarea>
+            <button type="button" class="btn-save-profile">Submit feedback</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="view-panel" data-view-panel="history">
+        <div class="content-panel">
+          <h3>Travel History</h3>
+          <div class="info-list">
+            <div class="info-card"><strong>Route BGC Express</strong><span>Today • 08:10 AM</span></div>
+            <div class="info-card"><strong>Route Uptown Shutter</strong><span>Yesterday • 06:45 PM</span></div>
+            <div class="info-card"><strong>Route Bonifacio Link</strong><span>Monday • 07:30 AM</span></div>
           </div>
-
-  
-          <div class="routes-section">
-            <span class="section-subtitle">ALL ROUTES</span>
-
-
-            <div class="route-card active-card">
-              <div class="card-header">
-                <span class="route-title">
-                  <span class="dot dot-green"></span>
-                  <strong>BGC Express</strong> <small>BGC-101</small>
-                </span>
-                <span class="badge badge-green">ON TIME</span>
-              </div>
-              <p class="route-stops">SM Aurora Premier &rarr; High Street Central</p>
-              <div class="card-footer">
-                <span class="eta-text text-green">ETA 4 min</span>
-                <span class="frequency">Every 8 min</span>
-                <div class="capacity-bar"><div class="fill fill-green" style="width: 30%;"></div></div>
-                <span class="capacity-num">12/40</span>
-              </div>
-            </div>
-
-
-            <div class="route-card">
-              <div class="card-header">
-                <span class="route-title">
-                  <span class="dot dot-blue"></span>
-                  <strong>Uptown Shutter</strong> <small>BGC-204</small>
-                </span>
-                <span class="badge badge-green">ON TIME</span>
-              </div>
-              <p class="route-stops">SM Aurora Premier &rarr; High Street Central</p>
-              <div class="card-footer">
-                <span class="eta-text text-green">ETA 7 min</span>
-                <span class="frequency">Every 12 min</span>
-                <div class="capacity-bar"><div class="fill fill-blue" style="width: 70%;"></div></div>
-                <span class="capacity-num">28/40</span>
-              </div>
-            </div>
-
-  
-            <div class="route-card">
-              <div class="card-header">
-                <span class="route-title">
-                  <span class="dot dot-orange"></span>
-                  <strong>Venice Loop</strong> <small>BGC-317</small>
-                </span>
-                <span class="badge badge-orange">DELAY</span>
-              </div>
-              <p class="route-stops">SM Aurora Premier &rarr; High Street Central</p>
-              <div class="card-footer">
-                <span class="eta-text text-green">ETA 11 min</span>
-                <span class="frequency">Every 15 min</span>
-                <div class="capacity-bar"><div class="fill fill-orange" style="width: 15%;"></div></div>
-                <span class="capacity-num">5/40</span>
-              </div>
-            </div>
-
-
-            <div class="route-card">
-              <div class="card-header">
-                <span class="route-title">
-                  <span class="dot dot-purple"></span>
-                  <strong>Bonifacio Link</strong> <small>BGC-409</small>
-                </span>
-                <span class="badge badge-green">ON TIME</span>
-              </div>
-              <p class="route-stops">SM Aurora Premier &rarr; High Street Central</p>
-              <div class="card-footer">
-                <span class="eta-text text-green">ETA 3 min</span>
-                <span class="frequency">Every 10 min</span>
-                <div class="capacity-bar"><div class="fill fill-purple" style="width: 82%;"></div></div>
-                <span class="capacity-num">33/40</span>
-              </div>
-            </div>
-
-          </div>
-        </section>
-
-    
-        <section class="map-column">
-          <div id="map-container"></div>
-        </section>
-
+        </div>
       </div>
     </main>
 
@@ -224,7 +245,31 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
-      // 1. Session Guard & Username Display
+      const navItems = document.querySelectorAll('.nav-item');
+      const viewPanels = document.querySelectorAll('[data-view-panel]');
+      const title = document.getElementById('view-title');
+      const viewTitles = {
+        routes: 'Route & Map',
+        stops: 'Bus Stops',
+        feedback: 'Feedback',
+        history: 'History'
+      };
+
+      navItems.forEach((item) => {
+        item.addEventListener('click', () => {
+          const selectedView = item.dataset.view;
+
+          navItems.forEach((nav) => nav.classList.toggle('active', nav === item));
+          viewPanels.forEach((panel) => {
+            panel.classList.toggle('active', panel.dataset.viewPanel === selectedView);
+          });
+
+          if (title && viewTitles[selectedView]) {
+            title.textContent = viewTitles[selectedView];
+          }
+        });
+      });
+
       try {
         const response = await fetch('/api/session');
         const data = await response.json();
@@ -244,7 +289,6 @@
         return;
       }
 
-
       const logoutBtn = document.getElementById('logout-btn');
       if (logoutBtn) {
         logoutBtn.addEventListener('click', async () => {
@@ -253,16 +297,18 @@
         });
       }
 
-      const map = L.map('map-container').setView([14.5515, 121.0505], 15);
+      const mapContainer = document.getElementById('map-container');
+      if (mapContainer && window.L) {
+        const map = L.map('map-container').setView([14.5515, 121.0505], 15);
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
-      }).addTo(map);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
 
-      // Add Sample Bus Marker
-      L.marker([14.5515, 121.0505]).addTo(map)
-        .bindPopup('<b>BGC Express (BGC-101)</b><br>On Time - High Street Central')
-        .openPopup();
+        L.marker([14.5515, 121.0505]).addTo(map)
+          .bindPopup('<b>BGC Express (BGC-101)</b><br>On Time - High Street Central')
+          .openPopup();
+      }
     });
   </script>
 </body>

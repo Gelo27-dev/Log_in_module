@@ -1,4 +1,126 @@
 document.addEventListener("DOMContentLoaded", () => {
+  const passwordInputs = document.querySelectorAll('input[type="password"]');
+
+  passwordInputs.forEach((input) => {
+    if (input.closest(".password-toggle-wrapper")) {
+      return;
+    }
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "password-toggle-wrapper";
+
+    const parent = input.parentNode;
+    parent.insertBefore(wrapper, input);
+    wrapper.appendChild(input);
+
+    const toggleButton = document.createElement("button");
+    toggleButton.type = "button";
+    toggleButton.className = "password-toggle";
+    toggleButton.setAttribute("aria-label", "Show password");
+    toggleButton.innerHTML = `
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12zm11 3a3 3 0 110-6 3 3 0 010 6zm0-2a1 1 0 100-2 1 1 0 000 2z" fill="currentColor"/>
+      </svg>
+    `;
+
+    toggleButton.addEventListener("click", () => {
+      const isHidden = input.type === "password";
+      input.type = isHidden ? "text" : "password";
+      toggleButton.classList.toggle("visible", isHidden);
+      toggleButton.setAttribute(
+        "aria-label",
+        isHidden ? "Hide password" : "Show password",
+      );
+    });
+
+    wrapper.appendChild(toggleButton);
+  });
+
+  const passwordInput = document.getElementById("password");
+  const passwordStrengthFill = document.getElementById(
+    "password-strength-fill",
+  );
+  const passwordStrengthText = document.getElementById(
+    "password-strength-text",
+  );
+
+  if (passwordInput && passwordStrengthFill && passwordStrengthText) {
+    const getPasswordStrength = (value) => {
+      const trimmedValue = value.trim();
+
+      if (!trimmedValue) {
+        return { score: 0, label: "Start typing", color: "#d93025" };
+      }
+
+      let score = 0;
+
+      if (trimmedValue.length >= 8) score += 25;
+      if (trimmedValue.length >= 12) score += 15;
+      if (/[A-Z]/.test(trimmedValue)) score += 20;
+      if (/[a-z]/.test(trimmedValue)) score += 20;
+      if (/\d/.test(trimmedValue)) score += 10;
+      if (/[^A-Za-z0-9]/.test(trimmedValue)) score += 10;
+
+      if (score > 100) score = 100;
+
+      let label = "Weak";
+      let color = "#d93025";
+
+      if (score >= 80) {
+        label = "Strong";
+        color = "#2d967f";
+      } else if (score >= 55) {
+        label = "Medium";
+        color = "#f59e0b";
+      }
+
+      return { score, label, color };
+    };
+
+    const applyPasswordStrength = () => {
+      const strengthWrapper = document.querySelector(
+        ".password-strength-wrapper",
+      );
+      const { score, label, color } = getPasswordStrength(passwordInput.value);
+
+      if (!passwordInput.value.trim()) {
+        passwordStrengthFill.style.width = "0%";
+        passwordStrengthText.textContent = "Start typing";
+        passwordStrengthText.style.color = "#d93025";
+        strengthWrapper?.classList.add("hidden-password-strength");
+        passwordInput.classList.remove(
+          "password-weak",
+          "password-medium",
+          "password-strong",
+        );
+        return;
+      }
+
+      strengthWrapper?.classList.remove("hidden-password-strength");
+      passwordStrengthFill.style.width = `${Math.max(score, 0)}%`;
+      passwordStrengthFill.style.background = color;
+      passwordStrengthText.textContent = label;
+      passwordStrengthText.style.color = color;
+
+      passwordInput.classList.remove(
+        "password-weak",
+        "password-medium",
+        "password-strong",
+      );
+
+      if (score >= 80) {
+        passwordInput.classList.add("password-strong");
+      } else if (score >= 55) {
+        passwordInput.classList.add("password-medium");
+      } else {
+        passwordInput.classList.add("password-weak");
+      }
+    };
+
+    passwordInput.addEventListener("input", applyPasswordStrength);
+    applyPasswordStrength();
+  }
+
   const form = document.querySelector(".login-form");
 
   if (form) {
@@ -17,9 +139,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 1. LOG IN
+
   async function handleLogIn() {
-    const emailUsername = document.getElementById("email-username").value.trim();
+    const emailUsername = document
+      .getElementById("email-username")
+      .value.trim();
     const password = document.getElementById("password").value.trim();
 
     if (!emailUsername || !password) {
@@ -45,19 +169,39 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 1200);
       }
     } catch (err) {
-      showNotification('Server connection error. Make sure "node server.js" is running.', "error");
+      showNotification(
+        'Server connection error. Make sure "node server.js" is running.',
+        "error",
+      );
     }
   }
-
 
   async function handleSignUp() {
     const username = document.getElementById("username").value.trim();
     const email = document.getElementById("email").value.trim();
-    const location = document.getElementById("location") ? document.getElementById("location").value.trim() : "";
+    const location = document.getElementById("location")
+      ? document.getElementById("location").value.trim()
+      : "";
+    const birthday = document.getElementById("birthday")
+      ? document.getElementById("birthday").value.trim()
+      : "";
+    const phoneNumber = document.getElementById("phone")
+      ? document.getElementById("phone").value.trim()
+      : "";
     const password = document.getElementById("password").value.trim();
-    const confirmPassword = document.getElementById("confirm-password").value.trim();
+    const confirmPassword = document
+      .getElementById("confirm-password")
+      .value.trim();
 
-    if (!username || !email || !password || !confirmPassword) {
+    if (
+      !username ||
+      !email ||
+      !location ||
+      !birthday ||
+      !phoneNumber ||
+      !password ||
+      !confirmPassword
+    ) {
       showNotification("Please complete all required fields.", "error");
       return;
     }
@@ -67,11 +211,12 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/?])[A-Za-z\d@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/?]{8,}$/;
+    const strongPasswordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/?])[A-Za-z\d@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/?]{8,}$/;
     if (!strongPasswordRegex.test(password)) {
       showNotification(
         "Password must be at least 8 characters long and include uppercase, lowercase, a number, and a special character.",
-        "error"
+        "error",
       );
       return;
     }
@@ -80,7 +225,15 @@ document.addEventListener("DOMContentLoaded", () => {
       const response = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, email, location, password, confirmPassword }),
+        body: JSON.stringify({
+          username,
+          email,
+          location,
+          birthday,
+          phoneNumber,
+          password,
+          confirmPassword,
+        }),
       });
 
       const data = await response.json();
@@ -98,7 +251,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 3. FORGOT PASSWORD
   async function handleForgotPassword() {
     const email = document.getElementById("reset-email").value.trim();
 
@@ -125,7 +277,6 @@ document.addEventListener("DOMContentLoaded", () => {
       showNotification("Server connection error.", "error");
     }
   }
-
 
   async function handleResetPassword() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -159,47 +310,80 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  function showNotification(message, type = "error") {
+    const container = document.getElementById("notification-container");
+    if (!container) return;
 
-function showNotification(message, type = "error") {
-  const existingBox = document.querySelector(".form-notification");
-  if (existingBox) existingBox.remove();
+    const notification = document.createElement("div");
+    notification.className = `notification notification-${type} notification-animate-in`;
 
-  const icons = {
-    success: "✔",
-    error: "✖",
-    warning: "⚠",
-    info: "ℹ"
-  };
+    const icons = {
+      success: "✓",
+      error: "✕",
+      warning: "⚠",
+      info: "ℹ",
+    };
 
-  const notification = document.createElement("div");
-  notification.className = `form-notification notification-${type}`;
+    const titles = {
+      success: "Success",
+      error: "Error",
+      warning: "Warning",
+      info: "Information",
+    };
 
-  notification.innerHTML = `
-    <div class="notif-content">
-      <span class="notif-icon">${icons[type] || icons.error}</span>
-      <span class="notif-message">${message}</span>
+    notification.innerHTML = `
+    <div class="notification-content">
+      <div class="notification-icon notification-icon-${type}">
+        ${icons[type]}
+      </div>
+      <div class="notification-body">
+        <div class="notification-title">${titles[type]}</div>
+        <div class="notification-message">${message}</div>
+      </div>
+      <button type="button" class="notification-close" aria-label="Close notification">&times;</button>
     </div>
-    <button type="button" class="notif-close" aria-label="Close">&times;</button>
+    <div class="notification-progress"></div>
   `;
 
-  const form = document.querySelector(".login-form");
-  if (form) {
-    form.parentNode.insertBefore(notification, form);
-  } else {
-    document.body.insertBefore(notification, document.body.firstChild);
+    container.appendChild(notification);
+
+    const closeBtn = notification.querySelector(".notification-close");
+    const closeNotification = () => {
+      notification.classList.remove("notification-animate-in");
+      notification.classList.add("notification-animate-out");
+      setTimeout(() => {
+        notification.remove();
+      }, 300);
+    };
+
+    closeBtn.addEventListener("click", closeNotification);
+
+    setTimeout(() => {
+      if (notification.parentNode) {
+        closeNotification();
+      }
+    }, 5000);
   }
 
 
-  const closeBtn = notification.querySelector(".notif-close");
-  closeBtn.addEventListener("click", () => notification.remove());
+  async function checkSessionStatus() {
+    try {
+      const response = await fetch("/api/session");
+      const data = await response.json();
 
-
-  setTimeout(() => {
-    if (notification && notification.parentNode) {
-      notification.remove();
+      if (!data.loggedIn && data.message) {
+        showNotification(data.message, "warning");
+        // Redirect to login after 2 seconds
+        setTimeout(() => {
+          window.location.href = "log_in.html";
+        }, 2000);
+      }
+    } catch (err) {
+      console.error("Session check error:", err);
     }
-  }, 5000);
-}
+  }
+
+  setInterval(checkSessionStatus, 5 * 60 * 1000);
 
   const googleBtn = document.getElementById("btn-google");
   const facebookBtn = document.getElementById("btn-facebook");
@@ -215,5 +399,4 @@ function showNotification(message, type = "error") {
       window.location.href = "/api/auth/facebook";
     });
   }
-  
 });

@@ -1,107 +1,129 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reset Password</title>
-  
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Poppins:wght@300;400;700&display=swap" rel="stylesheet">
-  
-  <link rel="stylesheet" href="style.css">
-  <script src="script.js" defer></script>
-</head>
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    // 1. Extract the secret token from the URL query string (?token=...)
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reset Password</title>
 
-    if (!token) {
-      alert('Invalid or missing password reset token. Please request a new link.');
-      window.location.href = 'forgot_pass.html';
-      return;
-    }
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Poppins:wght@300;400;700&display=swap"
+      rel="stylesheet"
+    />
 
-    // 2. Form controls
-    const newPasswordInput = document.querySelector('input[name="newPassword"]') || document.querySelectorAll('input[type="password"]')[0];
-    const confirmPasswordInput = document.querySelector('input[name="confirmPassword"]') || document.querySelectorAll('input[type="password"]')[1];
-    const submitBtn = document.querySelector('button');
+    <link rel="stylesheet" href="style.css" />
+    <script src="script.js" defer></script>
+  </head>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get("token");
 
-    submitBtn.addEventListener('click', async (e) => {
-      e.preventDefault();
-
-      const newPassword = newPasswordInput.value;
-      const confirmPassword = confirmPasswordInput ? confirmPasswordInput.value : newPassword;
-
-      if (!newPassword) {
-        alert('Please enter a new password.');
+      if (!token) {
+        alert(
+          "Invalid or missing password reset token. Please request a new link.",
+        );
+        window.location.href = "forgot_pass.html";
         return;
       }
 
-      if (newPassword !== confirmPassword) {
-        alert('Passwords do not match!');
-        return;
-      }
+      
+      const newPasswordInput =
+        document.querySelector('input[name="newPassword"]') ||
+        document.querySelectorAll('input[type="password"]')[0];
+      const confirmPasswordInput =
+        document.querySelector('input[name="confirmPassword"]') ||
+        document.querySelectorAll('input[type="password"]')[1];
+      const submitBtn = document.querySelector("button");
 
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Updating...';
+      submitBtn.addEventListener("click", async (e) => {
+        e.preventDefault();
 
-      try {
-        const response = await fetch('/api/reset-password', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token, newPassword })
-        });
+        const newPassword = newPasswordInput.value;
+        const confirmPassword = confirmPasswordInput
+          ? confirmPasswordInput.value
+          : newPassword;
 
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to reset password.');
+        if (!newPassword) {
+          alert("Please enter a new password.");
+          return;
         }
 
-        alert(data.message); // "Password updated successfully! Redirecting to login..."
-        window.location.href = 'log_in.html'; // Redirect to login page
+        if (newPassword !== confirmPassword) {
+          alert("Passwords do not match!");
+          return;
+        }
 
-      } catch (err) {
-        alert(err.message);
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Reset Password';
-      }
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Updating...";
+
+        try {
+          const response = await fetch("/api/reset-password", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token, newPassword }),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.error || "Failed to reset password.");
+          }
+
+          alert(data.message); 
+          window.location.href = "log_in.html"; 
+        } catch (err) {
+          alert(err.message);
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Reset Password";
+        }
+      });
     });
-  });
-</script>
-<body>
+  </script>
+  <body>
+    <div id="notification-container"></div>
 
-  <main class="web-container">
-    <section class="hero-panel">
-      <div class="logo-container">
-        <img src="assets/logo-nextstop.png" alt="NextStop BGC Logo" class="brand-logo">
-      </div>
-    </section>
+    <main class="web-container">
+      <section class="hero-panel">
+        <div class="logo-container">
+          <img
+            src="assets/logo-nextstop.png"
+            alt="NextStop BGC Logo"
+            class="brand-logo"
+          />
+        </div>
+      </section>
 
-    <section class="form-panel">
-      <div class="content-box">
-        <h1 class="main-title">Set New Password</h1>
-        <p class="main-description text-bold">
-          Enter your new strong password below.
-        </p>
+      <section class="form-panel">
+        <div class="content-box">
+          <h1 class="main-title">Set New Password</h1>
+          <p class="main-description text-bold">
+            Enter your new strong password below.
+          </p>
 
-        <form class="login-form">
-          <div class="input-group">
-            <label for="new-password">NEW PASSWORD</label>
-            <input type="password" id="new-password" placeholder="Enter new password" required>
-          </div>
+          <form class="login-form">
+            <div class="input-group">
+              <label for="new-password">NEW PASSWORD</label>
+              <input
+                type="password"
+                id="new-password"
+                placeholder="Enter new password"
+                required
+              />
+            </div>
 
-          <button type="submit" class="btn btn-login form-submit-btn">Update Password</button>
-        </form>
+            <button type="submit" class="btn btn-login form-submit-btn">
+              Update Password
+            </button>
+          </form>
 
-        <a href="log_in.html" class="back-link">&longleftarrow; Back to Login</a>
-      </div>
-    </section>
-  </main>
-  
-
-</body>
+          <a href="log_in.html" class="back-link"
+            >&longleftarrow; Back to Login</a
+          >
+        </div>
+      </section>
+    </main>
+  </body>
 </html>
