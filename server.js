@@ -163,7 +163,7 @@ app.use((req, res, next) => {
         .json({ error: "Session expired. Please log in again." });
     }
 
-    // Update last activity timestamp
+    
     req.session.lastActivity = now;
   }
   next();
@@ -344,7 +344,7 @@ app.post("/api/login", async (req, res) => {
       });
     }
 
-    // Login successful - reset failed attempts
+    
     await db.query(
       "UPDATE users SET failed_attempts = 0, account_locked = 0 WHERE id = ?",
       [user.id],
