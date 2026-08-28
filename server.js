@@ -13,6 +13,18 @@ const db = require("./db");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+process.on("uncaughtException", (err) => {
+  console.error("[ERROR] [UNCAUGHT]", err.message);
+  if (
+    err.code === "ERR_CONNECTION_REFUSED" ||
+    err.code === "PROTOCOL_CONNECTION_LOST"
+  ) {
+    console.error(
+      "\n[WARNING] DATABASE CONNECTION FAILED:\n  Please ensure XAMPP MySQL is running on localhost:3306",
+    );
+  }
+});
+
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 465,
@@ -38,98 +50,151 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      maxAge: 20 * 60 * 1000, 
+      maxAge: 20 * 60 * 1000,
       secure: false,
     },
   }),
 );
 
-
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Google OAuth Strategy
-passport.use(
-  new GoogleStrategy(
-    {
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: `http://localhost:${PORT}/api/auth/google/callback`,
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      try {
-        const [users] = await db.query(
-          "SELECT * FROM users WHERE google_id = ?",
-          [profile.id],
-        );
+const generateTempPassword = () => {
+  const length = 12;
+  const charset =
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%";
+  let password = "";
+  for (let i = 0; i < length; i++) {
+    password += charset.charAt(Math.floor(Math.random() * charset.length));
+  }
+  return password;
+};
 
-        if (users.length > 0) {
-          return done(null, users[0]);
+if (
+  process.env.GOOGLE_CLIENT_ID &&
+  process.env.GOOGLE_CLIENT_ID !== "your_google_client_id_here"
+) {
+  passport.use(
+    new GoogleStrategy(
+      {
+        clientID: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        callbackURL: `http://localhost:${PORT}/api/auth/google/callback`,
+      },
+      async (accessToken, refreshToken, profile, done) => {
+        try {
+          const [users] = await db.query(
+            "SELECT * FROM users WHERE google_id = ?",
+            [profile.id],
+          );
+
+          if (users.length > 0) {
+            return done(null, users[0]);
+          }
+
+          const email = profile.emails[0]?.value;
+          const displayName = profile.displayName;
+          const profilePicture = profile.photos[0]?.value;
+
+          const tempPassword = generateTempPassword();
+          const passwordHash = await bcrypt.hash(tempPassword, 10);
+
+          const [newUser] = await db.query(
+            "INSERT INTO users (username, email, google_id, oauth_provider, profile_picture, password_hash) VALUES (?, ?, ?, ?, ?, ?)",
+            [
+              displayName,
+              email,
+              profile.id,
+              "google",
+              profilePicture,
+              passwordHash,
+            ],
+          );
+
+          const [createdUser] = await db.query(
+            "SELECT * FROM users WHERE id = ?",
+            [newUser.insertId],
+          );
+
+          createdUser[0].tempPassword = tempPassword;
+
+          return done(null, createdUser[0]);
+        } catch (err) {
+          return done(err);
         }
+      },
+    ),
+  );
+} else {
+  console.log(
+    "[WARNING] Google OAuth disabled. Configure GOOGLE_CLIENT_ID in .env to enable.",
+  );
+}
 
-        const email = profile.emails[0]?.value;
-        const displayName = profile.displayName;
-        const profilePicture = profile.photos[0]?.value;
+if (
+  process.env.FACEBOOK_APP_ID &&
+  process.env.FACEBOOK_APP_ID !== "your_facebook_app_id_here"
+) {
+  passport.use(
+    new FacebookStrategy(
+      {
+        clientID: process.env.FACEBOOK_APP_ID,
+        clientSecret: process.env.FACEBOOK_APP_SECRET,
+        callbackURL:
+          process.env.FACEBOOK_CALLBACK_URL ||
+          `http://localhost:${PORT}/api/auth/facebook/callback`,
+        profileFields: ["id", "displayName", "emails", "photos"],
+      },
+      async (accessToken, refreshToken, profile, done) => {
+        try {
+          const [users] = await db.query(
+            "SELECT * FROM users WHERE facebook_id = ?",
+            [profile.id],
+          );
 
-        const [newUser] = await db.query(
-          "INSERT INTO users (username, email, google_id, oauth_provider, profile_picture) VALUES (?, ?, ?, ?, ?)",
-          [displayName, email, profile.id, "google", profilePicture],
-        );
+          if (users.length > 0) {
+            return done(null, users[0]);
+          }
 
-        const [createdUser] = await db.query(
-          "SELECT * FROM users WHERE id = ?",
-          [newUser.insertId],
-        );
-        return done(null, createdUser[0]);
-      } catch (err) {
-        return done(err);
-      }
-    },
-  ),
-);
+          const email =
+            profile.emails?.[0]?.value || `fb_${profile.id}@facebook.com`;
+          const displayName = profile.displayName || `Facebook_${profile.id}`;
+          const profilePicture = profile.photos[0]?.value;
 
+          const tempPassword = generateTempPassword();
+          const passwordHash = await bcrypt.hash(tempPassword, 10);
 
-passport.use(
-  new FacebookStrategy(
-    {
-      clientID: process.env.FACEBOOK_APP_ID,
-      clientSecret: process.env.FACEBOOK_APP_SECRET,
-      callbackURL: `http://localhost:${PORT}/api/auth/facebook/callback`,
-      profileFields: ["id", "displayName", "emails", "photos"],
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      try {
-        const [users] = await db.query(
-          "SELECT * FROM users WHERE facebook_id = ?",
-          [profile.id],
-        );
+          const [newUser] = await db.query(
+            "INSERT INTO users (username, email, facebook_id, oauth_provider, profile_picture, password_hash) VALUES (?, ?, ?, ?, ?, ?)",
+            [
+              displayName,
+              email,
+              profile.id,
+              "facebook",
+              profilePicture,
+              passwordHash,
+            ],
+          );
 
-        if (users.length > 0) {
-          return done(null, users[0]);
+          const [createdUser] = await db.query(
+            "SELECT * FROM users WHERE id = ?",
+            [newUser.insertId],
+          );
+
+          createdUser[0].tempPassword = tempPassword;
+
+          return done(null, createdUser[0]);
+        } catch (err) {
+          return done(err);
         }
-
-        const email =
-          profile.emails[0]?.value || `fb_${profile.id}@facebook.com`;
-        const displayName = profile.displayName;
-        const profilePicture = profile.photos[0]?.value;
-
-        const [newUser] = await db.query(
-          "INSERT INTO users (username, email, facebook_id, oauth_provider, profile_picture) VALUES (?, ?, ?, ?, ?)",
-          [displayName, email, profile.id, "facebook", profilePicture],
-        );
-
-        const [createdUser] = await db.query(
-          "SELECT * FROM users WHERE id = ?",
-          [newUser.insertId],
-        );
-        return done(null, createdUser[0]);
-      } catch (err) {
-        return done(err);
-      }
-    },
-  ),
-);
-
+      },
+    ),
+  );
+} else {
+  console.log(
+    "[WARNING] Facebook OAuth disabled. Configure FACEBOOK_APP_ID in .env to enable.",
+  );
+}
 
 passport.serializeUser((user, done) => {
   done(null, user.id);
@@ -146,7 +211,6 @@ passport.deserializeUser(async (id, done) => {
 
 app.use(express.static(__dirname));
 
-
 const INACTIVITY_TIMEOUT = 20 * 60 * 1000; // 20 minutes
 
 app.use((req, res, next) => {
@@ -156,20 +220,32 @@ app.use((req, res, next) => {
     const timeSinceLastActivity = now - lastActivity;
 
     if (timeSinceLastActivity > INACTIVITY_TIMEOUT) {
-    
       req.session.destroy();
       return res
         .status(401)
         .json({ error: "Session expired. Please log in again." });
     }
 
-    
     req.session.lastActivity = now;
   }
   next();
 });
 
-
+app.use((err, req, res, next) => {
+  if (
+    err &&
+    (err.code === "PROTOCOL_CONNECTION_LOST" ||
+      err.code === "ERR_CONNECTION_REFUSED" ||
+      err.code === "ER_BAD_DB_ERROR")
+  ) {
+    console.error("[ERROR] [DATABASE]", err.message);
+    return res.status(503).json({
+      error:
+        "Database service unavailable. Please check XAMPP MySQL connection.",
+    });
+  }
+  next(err);
+});
 
 app.get("/api/session", (req, res) => {
   if (req.session && req.session.loggedIn) {
@@ -195,7 +271,6 @@ app.get("/api/session", (req, res) => {
   res.json({ loggedIn: false });
 });
 
-// Logout
 app.post("/api/logout", (req, res) => {
   req.session.destroy((err) => {
     if (err) {
@@ -205,7 +280,6 @@ app.post("/api/logout", (req, res) => {
     res.json({ message: "Logged out successfully." });
   });
 });
-
 
 app.post("/api/register", async (req, res) => {
   const {
@@ -266,12 +340,24 @@ app.post("/api/register", async (req, res) => {
       message: "Account created successfully! Redirecting to login...",
     });
   } catch (err) {
-    console.error("Registration Error:", err);
+    console.error("[REGISTRATION ERROR]", err.message);
+    if (err.code === "ER_ACCESS_DENIED_ERROR") {
+      return res
+        .status(503)
+        .json({ error: "Database connection failed. Check XAMPP MySQL." });
+    }
+    if (
+      err.code === "ERR_CONNECTION_REFUSED" ||
+      err.code === "PROTOCOL_CONNECTION_LOST"
+    ) {
+      return res.status(503).json({
+        error: "Database connection failed. Ensure XAMPP MySQL is running.",
+      });
+    }
     res.status(500).json({ error: "Database error during registration." });
   }
 });
 
-// Login
 app.post("/api/login", async (req, res) => {
   const { emailUsername, password } = req.body;
 
@@ -293,7 +379,6 @@ app.post("/api/login", async (req, res) => {
 
     const user = users[0];
 
- 
     if (user.account_locked) {
       const now = new Date();
       const lockUntil = new Date(user.lock_until);
@@ -304,7 +389,6 @@ app.post("/api/login", async (req, res) => {
           error: `Your account has been locked due to multiple failed login attempts. Please try again in ${minutesRemaining} minute(s).`,
         });
       } else {
-   
         await db.query(
           "UPDATE users SET account_locked = 0, lock_until = NULL, failed_attempts = 0 WHERE id = ?",
           [user.id],
@@ -312,16 +396,13 @@ app.post("/api/login", async (req, res) => {
       }
     }
 
-
     const isMatch = await bcrypt.compare(password, user.password_hash);
 
     if (!isMatch) {
-      // Increment failed attempts
       const newFailedAttempts = user.failed_attempts + 1;
       const maxAttempts = 5;
 
       if (newFailedAttempts >= maxAttempts) {
-        // Lock account for 30 minutes
         const lockUntil = new Date(Date.now() + 30 * 60 * 1000);
         await db.query(
           "UPDATE users SET failed_attempts = ?, account_locked = 1, lock_until = ? WHERE id = ?",
@@ -344,7 +425,6 @@ app.post("/api/login", async (req, res) => {
       });
     }
 
-    
     await db.query(
       "UPDATE users SET failed_attempts = 0, account_locked = 0 WHERE id = ?",
       [user.id],
@@ -357,11 +437,18 @@ app.post("/api/login", async (req, res) => {
 
     res.json({ message: "Login successful! Redirecting to dashboard..." });
   } catch (err) {
-    console.error("Login Error:", err);
+    console.error("[LOGIN ERROR]", err.message);
+    if (
+      err.code === "ERR_CONNECTION_REFUSED" ||
+      err.code === "PROTOCOL_CONNECTION_LOST"
+    ) {
+      return res.status(503).json({
+        error: "Database connection failed. Ensure XAMPP MySQL is running.",
+      });
+    }
     res.status(500).json({ error: "Server error during login." });
   }
 });
-
 
 app.post("/api/forgot-password", async (req, res) => {
   const { email } = req.body;
@@ -416,7 +503,15 @@ app.post("/api/forgot-password", async (req, res) => {
       message: "Password reset link sent! Please check your email inbox.",
     });
   } catch (err) {
-    console.error("Forgot Password Error:", err);
+    console.error("[FORGOT PASSWORD ERROR]", err.message);
+    if (
+      err.code === "ERR_CONNECTION_REFUSED" ||
+      err.code === "PROTOCOL_CONNECTION_LOST"
+    ) {
+      return res.status(503).json({
+        error: "Database connection failed. Ensure XAMPP MySQL is running.",
+      });
+    }
     res.status(500).json({ error: "Server error generating reset link." });
   }
 });
@@ -454,11 +549,18 @@ app.post("/api/reset-password", async (req, res) => {
       message: "Password updated successfully! Redirecting to login...",
     });
   } catch (err) {
-    console.error("Reset Password Error:", err);
+    console.error("[RESET PASSWORD ERROR]", err.message);
+    if (
+      err.code === "ERR_CONNECTION_REFUSED" ||
+      err.code === "PROTOCOL_CONNECTION_LOST"
+    ) {
+      return res.status(503).json({
+        error: "Database connection failed. Ensure XAMPP MySQL is running.",
+      });
+    }
     res.status(500).json({ error: "Server error resetting password." });
   }
 });
-
 
 app.post("/api/admin/unlock-account", async (req, res) => {
   const { email } = req.body;
@@ -475,59 +577,111 @@ app.post("/api/admin/unlock-account", async (req, res) => {
 
     res.json({ message: `Account ${email} has been unlocked.` });
   } catch (err) {
-    console.error("Unlock Account Error:", err);
+    console.error("[UNLOCK ACCOUNT ERROR]", err.message);
+    if (
+      err.code === "ERR_CONNECTION_REFUSED" ||
+      err.code === "PROTOCOL_CONNECTION_LOST"
+    ) {
+      return res.status(503).json({
+        error: "Database connection failed. Ensure XAMPP MySQL is running.",
+      });
+    }
     res.status(500).json({ error: "Server error unlocking account." });
   }
 });
 
+if (
+  process.env.GOOGLE_CLIENT_ID &&
+  process.env.GOOGLE_CLIENT_ID !== "your_google_client_id_here"
+) {
+  app.get(
+    "/api/auth/google",
+    passport.authenticate("google", { scope: ["profile", "email"] }),
+  );
 
+  app.get(
+    "/api/auth/google/callback",
+    passport.authenticate("google", { failureRedirect: "/log_in.html" }),
+    (req, res) => {
+      req.session.loggedIn = true;
+      req.session.userId = req.user.id;
+      req.session.username = req.user.username;
+      req.session.lastActivity = Date.now();
 
-app.get(
-  "/api/auth/google",
-  passport.authenticate("google", { scope: ["profile", "email"] }),
-);
+      if (req.user.tempPassword) {
+        req.session.tempPassword = req.user.tempPassword;
+      }
 
-app.get(
-  "/api/auth/google/callback",
-  passport.authenticate("google", { failureRedirect: "/log_in.html" }),
-  (req, res) => {
-    // Successful authentication - set session
-    req.session.loggedIn = true;
-    req.session.userId = req.user.id;
-    req.session.username = req.user.username;
-    req.session.lastActivity = Date.now();
+      res.redirect("/dashboard.html");
+    },
+  );
+}
 
-    res.redirect("/dashboard.html");
-  },
-);
+if (
+  process.env.FACEBOOK_APP_ID &&
+  process.env.FACEBOOK_APP_ID !== "your_facebook_app_id_here"
+) {
+  app.get(
+    "/api/auth/facebook",
+    passport.authenticate("facebook", { scope: ["email"] }),
+  );
 
+  app.get(
+    "/api/auth/facebook/callback",
+    passport.authenticate("facebook", { failureRedirect: "/log_in.html" }),
+    (req, res) => {
+      req.session.loggedIn = true;
+      req.session.userId = req.user.id;
+      req.session.username = req.user.username;
+      req.session.lastActivity = Date.now();
 
-app.get(
-  "/api/auth/facebook",
-  passport.authenticate("facebook", { scope: ["email"] }),
-);
+      if (req.user.tempPassword) {
+        req.session.tempPassword = req.user.tempPassword;
+      }
 
-app.get(
-  "/api/auth/facebook/callback",
-  passport.authenticate("facebook", { failureRedirect: "/log_in.html" }),
-  (req, res) => {
+      res.redirect("/dashboard.html");
+    },
+  );
+}
 
-    req.session.loggedIn = true;
-    req.session.userId = req.user.id;
-    req.session.username = req.user.username;
-    req.session.lastActivity = Date.now();
+app.get("/api/config", (req, res) => {
+  res.json({
+    googleOAuthEnabled:
+      process.env.GOOGLE_CLIENT_ID &&
+      process.env.GOOGLE_CLIENT_ID !== "your_google_client_id_here",
+    facebookOAuthEnabled:
+      process.env.FACEBOOK_APP_ID &&
+      process.env.FACEBOOK_APP_ID !== "your_facebook_app_id_here",
+  });
+});
 
-    res.redirect("/dashboard.html");
-  },
-);
+app.get("/api/temp-password", (req, res) => {
+  if (!req.session || !req.session.loggedIn) {
+    return res.status(401).json({ error: "Not logged in" });
+  }
+
+  if (req.session.tempPassword) {
+    const tempPassword = req.session.tempPassword;
+    delete req.session.tempPassword; // Remove after retrieval
+    return res.json({
+      tempPassword,
+      message: "Save this password to login manually with your email",
+    });
+  }
+
+  res.json({ tempPassword: null });
+});
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
 app.listen(PORT, () => {
-  console.log(`\n[SERVER] Successfully running on http://localhost:${PORT}`);
-  console.log(`\n[ROUTES] Available API endpoints:`);
+  console.log(`\n[SYSTEM] ==========================================`);
+  console.log(`[SYSTEM] NextStop Server Started!`);
+  console.log(`[SYSTEM] Running on http://localhost:${PORT}`);
+  console.log(`[SYSTEM] ==========================================\n`);
+  console.log(`[ROUTES] Available API endpoints:`);
   console.log(`  POST   /api/register        - Create new account`);
   console.log(`  POST   /api/login           - Log in to account`);
   console.log(`  POST   /api/logout          - Log out of account`);

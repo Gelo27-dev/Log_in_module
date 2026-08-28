@@ -9,13 +9,32 @@ const db = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
+  enableKeepAlive: true,
+  decimalNumbers: true,
+  supportBigNumbers: true,
+  bigNumberStrings: false,
 });
 
 db.getConnection((err, connection) => {
   if (err) {
-    console.error("[DATABASE] Connection failed:", err.message);
+    if (err.code === "PROTOCOL_CONNECTION_LOST") {
+      console.error(
+        "[DATABASE] Connection was closed (XAMPP server may not be running).",
+      );
+    }
+    if (err.code === "ERR_CONNECTION_REFUSED") {
+      console.error(
+        "[DATABASE] Connection was refused. Ensure XAMPP MySQL is running on localhost:3306",
+      );
+    }
+    if (err.code === "ER_BAD_DB_ERROR") {
+      console.error(
+        "[DATABASE] Database 'nextstop_db' does not exist. Please run database.sql first.",
+      );
+    }
+    console.error("[DATABASE] Error:", err.message);
   } else {
-    console.log("[DATABASE] Successfully connected to MySQL (XAMPP)");
+    console.log("[DATABASE] [SUCCESS] Successfully connected to MySQL (XAMPP)");
     connection.release();
   }
 });

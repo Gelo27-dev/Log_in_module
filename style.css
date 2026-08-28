@@ -433,7 +433,6 @@ body {
   }
 }
 
-/* B. TABLETS & SMALL LAPTOPS */
 @media (max-width: 1100px) and (min-width: 901px) {
   .main-title {
     font-size: 34px;
@@ -527,8 +526,6 @@ body {
     height: 48px;
   }
 }
-
-
 
 #notification-container {
   position: fixed;
@@ -748,7 +745,6 @@ body {
   }
 }
 
-/* Responsive Design */
 @media (max-width: 480px) {
   #notification-container {
     top: 10px;

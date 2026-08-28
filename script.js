@@ -139,7 +139,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-
   async function handleLogIn() {
     const emailUsername = document
       .getElementById("email-username")
@@ -365,7 +364,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 5000);
   }
 
-
   async function checkSessionStatus() {
     try {
       const response = await fetch("/api/session");
@@ -373,7 +371,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (!data.loggedIn && data.message) {
         showNotification(data.message, "warning");
-        // Redirect to login after 2 seconds
         setTimeout(() => {
           window.location.href = "log_in.html";
         }, 2000);
@@ -385,18 +382,41 @@ document.addEventListener("DOMContentLoaded", () => {
 
   setInterval(checkSessionStatus, 5 * 60 * 1000);
 
-  const googleBtn = document.getElementById("btn-google");
-  const facebookBtn = document.getElementById("btn-facebook");
+  fetch("/api/config")
+    .then((res) => res.json())
+    .then((config) => {
+      const googleBtn = document.getElementById("btn-google");
+      const facebookBtn = document.getElementById("btn-facebook");
 
-  if (googleBtn) {
-    googleBtn.addEventListener("click", () => {
-      window.location.href = "/api/auth/google";
-    });
-  }
+      if (googleBtn && config.googleOAuthEnabled) {
+        googleBtn.addEventListener("click", () => {
+          window.location.href = "/api/auth/google";
+        });
+      } else if (googleBtn) {
+        googleBtn.addEventListener("click", (event) => {
+          event.preventDefault();
+          showNotification("Google login is not configured yet.", "warning");
+        });
+      }
 
-  if (facebookBtn) {
-    facebookBtn.addEventListener("click", () => {
-      window.location.href = "/api/auth/facebook";
+      if (facebookBtn && config.facebookOAuthEnabled) {
+        facebookBtn.addEventListener("click", () => {
+          window.location.href = "/api/auth/facebook";
+        });
+      } else if (facebookBtn) {
+        facebookBtn.addEventListener("click", (event) => {
+          event.preventDefault();
+          showNotification(
+            "Facebook login is not configured yet. Add FACEBOOK_APP_ID to .env.",
+            "warning",
+          );
+        });
+      }
+    })
+    .catch((err) => {
+      console.log(
+        "[WARNING] Could not load OAuth config. OAuth buttons will be hidden.",
+        err,
+      );
     });
-  }
 });
