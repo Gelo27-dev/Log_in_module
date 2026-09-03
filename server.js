@@ -13,7 +13,7 @@ const db = require("./db");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-process.on("uncaughtException", (err) => {
+ process.on("uncaughtException", (err) => {
   console.error("[ERROR] [UNCAUGHT]", err.message);
   if (
     err.code === "ERR_CONNECTION_REFUSED" ||
@@ -58,6 +58,82 @@ app.use(
 
 app.use(passport.initialize());
 app.use(passport.session());
+
+// ============ AUTH MIDDLEWARE (Eliminates 17 repeated checks) ============
+const requireAuth = (req, res, next) => {
+  if (!req.session || !req.session.loggedIn) {
+    return res.status(401).json({ error: "Not logged in" });
+  }
+  next();
+};
+
+const getRequestIp = (req) =>
+  req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
+  req.socket.remoteAddress ||
+  null;
+
+const writeAudit = async (query, values) => {
+  try {
+    await db.query(query, values);
+  } catch (err) {
+    console.error("[AUDIT ERROR]", err.message);
+  }
+};
+
+const writeGeneralAudit = (req, values) =>
+  writeAudit(
+    `INSERT INTO audit_logs
+      (user_id, username, action, entity_type, entity_id, new_value, ip_address, user_agent, status, error_message)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      values.userId || null,
+      values.username || null,
+      values.action,
+      values.entityType,
+      values.entityId || null,
+      values.newValue || null,
+      getRequestIp(req),
+      req.get("user-agent") || null,
+      values.status || "success",
+      values.errorMessage || null,
+    ],
+  );
+
+const writeLoginAudit = (req, values) =>
+  writeAudit(
+    `INSERT INTO login_audit
+      (user_id, username, email, login_method, ip_address, user_agent, login_status, failure_reason, session_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      values.userId || null,
+      values.username || null,
+      values.email || null,
+      values.method || "email_password",
+      getRequestIp(req),
+      req.get("user-agent") || null,
+      values.status,
+      values.failureReason || null,
+      values.sessionId || null,
+    ],
+  );
+
+const writeAccountAudit = (req, values) =>
+  writeAudit(
+    `INSERT INTO account_audit
+      (user_id, changed_by, changed_by_username, change_type, field_name, old_value, new_value, ip_address, reason)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      values.userId,
+      values.changedBy || values.userId,
+      values.changedByUsername || values.username || null,
+      values.changeType,
+      values.fieldName,
+      values.oldValue || null,
+      values.newValue || null,
+      getRequestIp(req),
+      values.reason || null,
+    ],
+  );
 
 const generateTempPassword = () => {
   const length = 12;
@@ -272,10 +348,32 @@ app.get("/api/session", (req, res) => {
 });
 
 app.post("/api/logout", (req, res) => {
+  const { userId, username } = req.session || {};
+  const sessionId = req.sessionID;
+
   req.session.destroy((err) => {
     if (err) {
       return res.status(500).json({ error: "Failed to log out." });
     }
+
+    if (userId && sessionId) {
+      writeAudit(
+        "UPDATE session_audit SET session_end = CURRENT_TIMESTAMP, termination_reason = ? WHERE user_id = ? AND session_id = ?",
+        ["manual_logout", userId, sessionId],
+      );
+      writeAudit(
+        "UPDATE login_audit SET logout_timestamp = CURRENT_TIMESTAMP, session_duration_minutes = TIMESTAMPDIFF(MINUTE, login_timestamp, CURRENT_TIMESTAMP) WHERE user_id = ? AND session_id = ? AND logout_timestamp IS NULL",
+        [userId, sessionId],
+      );
+      writeGeneralAudit(req, {
+        userId,
+        username,
+        action: "logout",
+        entityType: "user",
+        entityId: userId,
+      });
+    }
+
     res.clearCookie("connect.sid");
     res.json({ message: "Logged out successfully." });
   });
@@ -324,7 +422,7 @@ app.post("/api/register", async (req, res) => {
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    await db.query(
+    const [registrationResult] = await db.query(
       "INSERT INTO users (username, email, location, birthday, phone_number, password_hash) VALUES (?, ?, ?, ?, ?, ?)",
       [
         username,
@@ -335,6 +433,25 @@ app.post("/api/register", async (req, res) => {
         passwordHash,
       ],
     );
+
+    await writeAccountAudit(req, {
+      userId: registrationResult.insertId,
+      changedBy: registrationResult.insertId,
+      changedByUsername: username,
+      username,
+      changeType: "profile_update",
+      fieldName: "account",
+      newValue: "Account created",
+      reason: "New account registration",
+    });
+    await writeGeneralAudit(req, {
+      userId: registrationResult.insertId,
+      username,
+      action: "register",
+      entityType: "user",
+      entityId: registrationResult.insertId,
+      newValue: JSON.stringify({ username, email }),
+    });
 
     res.status(201).json({
       message: "Account created successfully! Redirecting to login...",
@@ -372,6 +489,17 @@ app.post("/api/login", async (req, res) => {
     );
 
     if (users.length === 0) {
+      await writeLoginAudit(req, {
+        email: emailUsername,
+        status: "failed",
+        failureReason: "Invalid username or email",
+      });
+      await writeGeneralAudit(req, {
+        action: "login_failed",
+        entityType: "user",
+        status: "failed",
+        errorMessage: "Invalid username or email",
+      });
       return res
         .status(400)
         .json({ error: "Invalid username/email or password." });
@@ -384,6 +512,13 @@ app.post("/api/login", async (req, res) => {
       const lockUntil = new Date(user.lock_until);
 
       if (now < lockUntil) {
+        await writeLoginAudit(req, {
+          userId: user.id,
+          username: user.username,
+          email: user.email,
+          status: "locked",
+          failureReason: "Account is temporarily locked",
+        });
         const minutesRemaining = Math.ceil((lockUntil - now) / (1000 * 60));
         return res.status(403).json({
           error: `Your account has been locked due to multiple failed login attempts. Please try again in ${minutesRemaining} minute(s).`,
@@ -408,6 +543,22 @@ app.post("/api/login", async (req, res) => {
           "UPDATE users SET failed_attempts = ?, account_locked = 1, lock_until = ? WHERE id = ?",
           [newFailedAttempts, lockUntil, user.id],
         );
+        await writeLoginAudit(req, {
+          userId: user.id,
+          username: user.username,
+          email: user.email,
+          status: "locked",
+          failureReason: "Maximum failed login attempts reached",
+        });
+        await writeAccountAudit(req, {
+          userId: user.id,
+          username: user.username,
+          changeType: "account_locked",
+          fieldName: "account_locked",
+          oldValue: "0",
+          newValue: "1",
+          reason: "Maximum failed login attempts reached",
+        });
         return res.status(403).json({
           error:
             "Your account has been locked due to multiple failed login attempts. Please try again in 30 minutes or contact support.",
@@ -418,6 +569,13 @@ app.post("/api/login", async (req, res) => {
         newFailedAttempts,
         user.id,
       ]);
+      await writeLoginAudit(req, {
+        userId: user.id,
+        username: user.username,
+        email: user.email,
+        status: "failed",
+        failureReason: "Invalid password",
+      });
 
       const attemptsRemaining = maxAttempts - newFailedAttempts;
       return res.status(400).json({
@@ -434,6 +592,30 @@ app.post("/api/login", async (req, res) => {
     req.session.userId = user.id;
     req.session.username = user.username;
     req.session.lastActivity = Date.now();
+
+    await writeLoginAudit(req, {
+      userId: user.id,
+      username: user.username,
+      email: user.email,
+      status: "success",
+      sessionId: req.sessionID,
+    });
+    await writeAudit(
+      "INSERT INTO session_audit (user_id, session_id, ip_address, user_agent, last_activity) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)",
+      [
+        user.id,
+        req.sessionID,
+        getRequestIp(req),
+        req.get("user-agent") || null,
+      ],
+    );
+    await writeGeneralAudit(req, {
+      userId: user.id,
+      username: user.username,
+      action: "login",
+      entityType: "user",
+      entityId: user.id,
+    });
 
     res.json({ message: "Login successful! Redirecting to dashboard..." });
   } catch (err) {
@@ -545,6 +727,15 @@ app.post("/api/reset-password", async (req, res) => {
       [passwordHash, user.id],
     );
 
+    await writeAccountAudit(req, {
+      userId: user.id,
+      username: user.username,
+      changeType: "password_change",
+      fieldName: "password_hash",
+      newValue: "[hidden]",
+      reason: "Password reset completed",
+    });
+
     res.json({
       message: "Password updated successfully! Redirecting to login...",
     });
@@ -574,6 +765,22 @@ app.post("/api/admin/unlock-account", async (req, res) => {
       "UPDATE users SET account_locked = 0, failed_attempts = 0, lock_until = NULL WHERE email = ?",
       [email],
     );
+
+    const [users] = await db.query(
+      "SELECT id, username FROM users WHERE email = ?",
+      [email],
+    );
+    if (users.length > 0) {
+      await writeAccountAudit(req, {
+        userId: users[0].id,
+        username: users[0].username,
+        changeType: "account_unlocked",
+        fieldName: "account_locked",
+        oldValue: "1",
+        newValue: "0",
+        reason: "Account manually unlocked",
+      });
+    }
 
     res.json({ message: `Account ${email} has been unlocked.` });
   } catch (err) {
@@ -672,6 +879,476 @@ app.get("/api/temp-password", (req, res) => {
   res.json({ tempPassword: null });
 });
 
+// Dashboard API Endpoints
+
+// Get all bus routes
+app.get("/api/routes", requireAuth, async (req, res) => {
+  try {
+    const [routes] = await db.query(
+      "SELECT id, route_number, route_name, route_color, start_location, end_location, status, eta_minutes, frequency_minutes, current_capacity, max_capacity FROM routes WHERE is_active = 1 ORDER BY route_number",
+    );
+
+    res.json({ routes });
+  } catch (err) {
+    console.error("[GET ROUTES ERROR]", err.message);
+    res.status(500).json({ error: "Failed to fetch routes" });
+  }
+});
+
+// Get all bus stops
+app.get("/api/stops", requireAuth, async (req, res) => {
+  try {
+    const [stops] = await db.query(
+      "SELECT id, stop_name, latitude, longitude, stop_type, distance_km FROM bus_stops WHERE is_active = 1 ORDER BY stop_name",
+    );
+
+    res.json({ stops });
+  } catch (err) {
+    console.error("[GET STOPS ERROR]", err.message);
+    res.status(500).json({ error: "Failed to fetch bus stops" });
+  }
+});
+
+// Get route details with stops
+app.get("/api/routes/:routeId", requireAuth, async (req, res) => {
+  const { routeId } = req.params;
+
+  try {
+    const [route] = await db.query("SELECT * FROM routes WHERE id = ?", [
+      routeId,
+    ]);
+
+    if (route.length === 0) {
+      return res.status(404).json({ error: "Route not found" });
+    }
+
+    const [routeStops] = await db.query(
+      `SELECT bs.id, bs.stop_name, bs.latitude, bs.longitude, bs.stop_type, rs.stop_order, rs.arrival_time_offset_minutes
+       FROM route_stops rs
+       JOIN bus_stops bs ON rs.stop_id = bs.id
+       WHERE rs.route_id = ?
+       ORDER BY rs.stop_order`,
+      [routeId],
+    );
+
+    res.json({ route: route[0], stops: routeStops });
+  } catch (err) {
+    console.error("[GET ROUTE DETAILS ERROR]", err.message);
+    res.status(500).json({ error: "Failed to fetch route details" });
+  }
+});
+
+// Get user's travel history
+app.get("/api/history", requireAuth, async (req, res) => {
+  const userId = req.session.userId;
+
+  try {
+    const [history] = await db.query(
+      `SELECT th.id, th.route_id, th.from_stop, th.to_stop, th.travel_date, th.travel_time, th.duration_minutes, r.route_name, r.route_number
+       FROM travel_history th
+       JOIN routes r ON th.route_id = r.id
+       WHERE th.user_id = ?
+       ORDER BY th.travel_date DESC, th.travel_time DESC
+       LIMIT 20`,
+      [userId],
+    );
+
+    res.json({ history });
+  } catch (err) {
+    console.error("[GET HISTORY ERROR]", err.message);
+    res.status(500).json({ error: "Failed to fetch travel history" });
+  }
+});
+
+// Log a trip to travel history
+app.post("/api/history", requireAuth, async (req, res) => {
+  const { routeId, fromStop, toStop, durationMinutes } = req.body;
+  const userId = req.session.userId;
+
+  if (!routeId || !fromStop || !toStop) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  try {
+    const travelDate = new Date().toISOString().split("T")[0];
+    const travelTime = new Date().toTimeString().split(" ")[0];
+
+    const [tripResult] = await db.query(
+      "INSERT INTO travel_history (user_id, route_id, from_stop, to_stop, travel_date, travel_time, duration_minutes) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      [
+        userId,
+        routeId,
+        fromStop,
+        toStop,
+        travelDate,
+        travelTime,
+        durationMinutes || null,
+      ],
+    );
+
+    await writeAudit(
+      "INSERT INTO trip_audit (trip_id, user_id, route_id, logged_by, logged_by_username, action, from_stop, to_stop, travel_date, travel_time, verification_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      [
+        tripResult.insertId,
+        userId,
+        routeId,
+        userId,
+        req.session.username,
+        "logged",
+        fromStop,
+        toStop,
+        travelDate,
+        travelTime,
+        "manually-logged",
+      ],
+    );
+    await writeGeneralAudit(req, {
+      userId,
+      username: req.session.username,
+      action: "trip_logged",
+      entityType: "travel_history",
+      entityId: tripResult.insertId,
+    });
+
+    res.status(201).json({ message: "Trip logged successfully" });
+  } catch (err) {
+    console.error("[LOG TRIP ERROR]", err.message);
+    res.status(500).json({ error: "Failed to log trip" });
+  }
+});
+
+// Get user's feedback
+app.get("/api/feedback", requireAuth, async (req, res) => {
+  const userId = req.session.userId;
+
+  try {
+    const [feedback] = await db.query(
+      `SELECT f.id, f.route_id, f.feedback_text, f.rating, f.feedback_category, f.created_at, r.route_name
+       FROM feedback f
+       LEFT JOIN routes r ON f.route_id = r.id
+       WHERE f.user_id = ?
+       ORDER BY f.created_at DESC
+       LIMIT 10`,
+      [userId],
+    );
+
+    res.json({ feedback });
+  } catch (err) {
+    console.error("[GET FEEDBACK ERROR]", err.message);
+    res.status(500).json({ error: "Failed to fetch feedback" });
+  }
+});
+
+// Submit feedback
+app.post("/api/feedback", requireAuth, async (req, res) => {
+  const { feedbackText, rating, category, routeId } = req.body;
+  const userId = req.session.userId;
+
+  if (!feedbackText || feedbackText.trim().length === 0) {
+    return res.status(400).json({ error: "Feedback text is required" });
+  }
+
+  if (feedbackText.trim().length > 1000) {
+    return res
+      .status(400)
+      .json({ error: "Feedback text must be less than 1000 characters" });
+  }
+
+  try {
+    const [feedbackResult] = await db.query(
+      "INSERT INTO feedback (user_id, route_id, feedback_text, rating, feedback_category) VALUES (?, ?, ?, ?, ?)",
+      [
+        userId,
+        routeId || null,
+        feedbackText.trim(),
+        rating || null,
+        category || null,
+      ],
+    );
+
+    await writeAudit(
+      "INSERT INTO feedback_audit (feedback_id, user_id, action, feedback_text, rating, category, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      [
+        feedbackResult.insertId,
+        userId,
+        "submitted",
+        feedbackText.trim(),
+        rating || null,
+        category || null,
+        "pending",
+      ],
+    );
+    await writeGeneralAudit(req, {
+      userId,
+      username: req.session.username,
+      action: "feedback_submitted",
+      entityType: "feedback",
+      entityId: feedbackResult.insertId,
+    });
+
+    res.status(201).json({ message: "Feedback submitted successfully" });
+  } catch (err) {
+    console.error("[SUBMIT FEEDBACK ERROR]", err.message);
+    res.status(500).json({ error: "Failed to submit feedback" });
+  }
+});
+
+// ==================== AUDIT API ENDPOINTS ====================
+
+// Get general audit logs (Admin only)
+app.get("/api/audit/logs", requireAuth, async (req, res) => {
+  // TODO: Add admin role check when role system is implemented
+  // For now, restrict to super admin or log owner
+  const {
+    limit = 50,
+    offset = 0,
+    action = null,
+    entity_type = null,
+  } = req.query;
+
+  try {
+    let query =
+      "SELECT id, user_id, username, action, entity_type, entity_id, status, timestamp FROM audit_logs WHERE 1=1";
+    const params = [];
+
+    if (action) {
+      query += " AND action = ?";
+      params.push(action);
+    }
+    if (entity_type) {
+      query += " AND entity_type = ?";
+      params.push(entity_type);
+    }
+
+    query += " ORDER BY timestamp DESC LIMIT ? OFFSET ?";
+    params.push(parseInt(limit), parseInt(offset));
+
+    const [logs] = await db.query(query, params);
+    res.json({ logs, total: logs.length });
+  } catch (err) {
+    console.error("[GET AUDIT LOGS ERROR]", err.message);
+    res.status(500).json({ error: "Failed to fetch audit logs" });
+  }
+});
+
+// Get login history (Admin + User's own data)
+app.get("/api/audit/login-history", requireAuth, async (req, res) => {
+  const { limit = 20, offset = 0, user_id = null } = req.query;
+  const loggedInUserId = req.session.userId;
+
+  try {
+    let query =
+      "SELECT id, user_id, username, email, login_method, login_status, ip_address, login_timestamp, logout_timestamp, session_duration_minutes FROM login_audit WHERE 1=1";
+    const params = [];
+
+    // Users can see their own login history, admins can see all
+    if (user_id && user_id !== loggedInUserId) {
+      // TODO: Check if current user is admin
+      return res
+        .status(403)
+        .json({ error: "Not authorized to view this user's login history" });
+    }
+
+    query += " ORDER BY login_timestamp DESC LIMIT ? OFFSET ?";
+    params.push(parseInt(limit), parseInt(offset));
+
+    const [logs] = await db.query(query, params);
+    res.json({ logs });
+  } catch (err) {
+    console.error("[GET LOGIN HISTORY ERROR]", err.message);
+    res.status(500).json({ error: "Failed to fetch login history" });
+  }
+});
+
+// Get route data changes (Admin only)
+app.get("/api/audit/route-changes", requireAuth, async (req, res) => {
+  const { route_id = null, limit = 50, offset = 0 } = req.query;
+
+  try {
+    let query =
+      "SELECT id, route_id, changed_by_username, change_type, field_name, old_value, new_value, change_reason, timestamp FROM route_audit WHERE 1=1";
+    const params = [];
+
+    if (route_id) {
+      query += " AND route_id = ?";
+      params.push(route_id);
+    }
+
+    query += " ORDER BY timestamp DESC LIMIT ? OFFSET ?";
+    params.push(parseInt(limit), parseInt(offset));
+
+    const [changes] = await db.query(query, params);
+    res.json({ changes });
+  } catch (err) {
+    console.error("[GET ROUTE CHANGES ERROR]", err.message);
+    res.status(500).json({ error: "Failed to fetch route changes" });
+  }
+});
+
+// Get feedback audit trail
+app.get("/api/audit/feedback-audit", requireAuth, async (req, res) => {
+  const { limit = 30, offset = 0, status = null } = req.query;
+  const userId = req.session.userId;
+
+  try {
+    let query =
+      "SELECT id, feedback_id, user_id, action, feedback_text, rating, category, status, timestamp FROM feedback_audit WHERE user_id = ?";
+    const params = [userId];
+
+    if (status) {
+      query += " AND status = ?";
+      params.push(status);
+    }
+
+    query += " ORDER BY timestamp DESC LIMIT ? OFFSET ?";
+    params.push(parseInt(limit), parseInt(offset));
+
+    const [audit] = await db.query(query, params);
+    res.json({ audit });
+  } catch (err) {
+    console.error("[GET FEEDBACK AUDIT ERROR]", err.message);
+    res.status(500).json({ error: "Failed to fetch feedback audit" });
+  }
+});
+
+// Get trip audit trail
+app.get("/api/audit/trip-audit", requireAuth, async (req, res) => {
+  const { limit = 30, offset = 0 } = req.query;
+  const userId = req.session.userId;
+
+  try {
+    const query = `SELECT id, trip_id, route_id, logged_by_username, action, from_stop, to_stop, 
+                   travel_date, travel_time, verification_status, timestamp 
+                   FROM trip_audit 
+                   WHERE user_id = ? 
+                   ORDER BY timestamp DESC 
+                   LIMIT ? OFFSET ?`;
+
+    const [audit] = await db.query(query, [
+      userId,
+      parseInt(limit),
+      parseInt(offset),
+    ]);
+    res.json({ audit });
+  } catch (err) {
+    console.error("[GET TRIP AUDIT ERROR]", err.message);
+    res.status(500).json({ error: "Failed to fetch trip audit" });
+  }
+});
+
+// Get account changes (User's own + Admin)
+app.get("/api/audit/account-changes", requireAuth, async (req, res) => {
+  const { limit = 30, offset = 0 } = req.query;
+  const userId = req.session.userId;
+
+  try {
+    const query = `SELECT id, user_id, changed_by_username, change_type, field_name, 
+                   timestamp FROM account_audit 
+                   WHERE user_id = ? 
+                   ORDER BY timestamp DESC 
+                   LIMIT ? OFFSET ?`;
+
+    const [changes] = await db.query(query, [
+      userId,
+      parseInt(limit),
+      parseInt(offset),
+    ]);
+    res.json({ changes });
+  } catch (err) {
+    console.error("[GET ACCOUNT CHANGES ERROR]", err.message);
+    res.status(500).json({ error: "Failed to fetch account changes" });
+  }
+});
+
+// Get session audit (User's own sessions)
+app.get("/api/audit/sessions", requireAuth, async (req, res) => {
+  const { limit = 20, offset = 0 } = req.query;
+  const userId = req.session.userId;
+
+  try {
+    const query = `SELECT id, user_id, ip_address, session_start, session_end, 
+                   termination_reason, activity_count FROM session_audit 
+                   WHERE user_id = ? 
+                   ORDER BY session_start DESC 
+                   LIMIT ? OFFSET ?`;
+
+    const [sessions] = await db.query(query, [
+      userId,
+      parseInt(limit),
+      parseInt(offset),
+    ]);
+    res.json({ sessions });
+  } catch (err) {
+    console.error("[GET SESSIONS ERROR]", err.message);
+    res.status(500).json({ error: "Failed to fetch sessions" });
+  }
+});
+
+// Get system events (Admin only)
+app.get("/api/audit/system-events", requireAuth, async (req, res) => {
+  // TODO: Add admin role check
+  const {
+    limit = 50,
+    offset = 0,
+    severity = null,
+    event_type = null,
+  } = req.query;
+
+  try {
+    let query =
+      "SELECT id, event_type, severity, message, related_user_id, timestamp FROM system_events WHERE 1=1";
+    const params = [];
+
+    if (event_type) {
+      query += " AND event_type = ?";
+      params.push(event_type);
+    }
+    if (severity) {
+      query += " AND severity = ?";
+      params.push(severity);
+    }
+
+    query += " ORDER BY timestamp DESC LIMIT ? OFFSET ?";
+    params.push(parseInt(limit), parseInt(offset));
+
+    const [events] = await db.query(query, params);
+    res.json({ events });
+  } catch (err) {
+    console.error("[GET SYSTEM EVENTS ERROR]", err.message);
+    res.status(500).json({ error: "Failed to fetch system events" });
+  }
+});
+
+// Get API access stats (Admin only)
+app.get("/api/audit/api-stats", requireAuth, async (req, res) => {
+  // TODO: Add admin role check
+  const { limit = 20, endpoint = null } = req.query;
+
+  try {
+    let query = `SELECT endpoint, COUNT(*) as call_count, 
+                 AVG(response_time_ms) as avg_response_time,
+                 MAX(response_time_ms) as max_response_time,
+                 SUM(CASE WHEN response_status != 200 THEN 1 ELSE 0 END) as error_count
+                 FROM api_access_log 
+                 WHERE 1=1`;
+    const params = [];
+
+    if (endpoint) {
+      query += " AND endpoint = ?";
+      params.push(endpoint);
+    }
+
+    query += " GROUP BY endpoint ORDER BY call_count DESC LIMIT ?";
+    params.push(parseInt(limit));
+
+    const [stats] = await db.query(query, params);
+    res.json({ stats });
+  } catch (err) {
+    console.error("[GET API STATS ERROR]", err.message);
+    res.status(500).json({ error: "Failed to fetch API stats" });
+  }
+});
+
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
@@ -681,11 +1358,39 @@ app.listen(PORT, () => {
   console.log(`[SYSTEM] NextStop Server Started!`);
   console.log(`[SYSTEM] Running on http://localhost:${PORT}`);
   console.log(`[SYSTEM] ==========================================\n`);
-  console.log(`[ROUTES] Available API endpoints:`);
+  console.log(`[ROUTES] Authentication APIs:`);
   console.log(`  POST   /api/register        - Create new account`);
   console.log(`  POST   /api/login           - Log in to account`);
   console.log(`  POST   /api/logout          - Log out of account`);
   console.log(`  POST   /api/forgot-password - Request password reset`);
   console.log(`  POST   /api/reset-password  - Reset password with token`);
   console.log(`  GET    /api/session         - Check session status\n`);
+  console.log(`[ROUTES] Dashboard APIs:`);
+  console.log(`  GET    /api/routes          - Get all bus routes`);
+  console.log(`  GET    /api/routes/:id      - Get route details with stops`);
+  console.log(`  GET    /api/stops           - Get all bus stops`);
+  console.log(`  GET    /api/history         - Get user's travel history`);
+  console.log(`  POST   /api/history         - Log a trip`);
+  console.log(`  GET    /api/feedback        - Get user's feedback`);
+  console.log(`  POST   /api/feedback        - Submit feedback\n`);
+  console.log(`[ROUTES] Audit APIs:`);
+  console.log(
+    `  GET    /api/audit/logs              - General audit logs (admin)`,
+  );
+  console.log(`  GET    /api/audit/login-history    - Login audit trail`);
+  console.log(
+    `  GET    /api/audit/route-changes    - Route data changes (admin)`,
+  );
+  console.log(`  GET    /api/audit/feedback-audit   - Feedback audit trail`);
+  console.log(`  GET    /api/audit/trip-audit       - Trip logging audit`);
+  console.log(
+    `  GET    /api/audit/account-changes  - Account modification log`,
+  );
+  console.log(`  GET    /api/audit/sessions         - User session history`);
+  console.log(
+    `  GET    /api/audit/system-events    - System events log (admin)`,
+  );
+  console.log(
+    `  GET    /api/audit/api-stats        - API performance stats (admin)\n`,
+  );
 });

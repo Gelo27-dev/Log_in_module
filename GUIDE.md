@@ -6,23 +6,46 @@ Follow this guide to install and run NextStop on another Windows PC.
 
 NextStop is a Node.js and Express application for BGC bus tracking and user authentication. The frontend uses HTML, CSS, and browser JavaScript. The backend uses Express, MySQL, sessions, bcrypt, Nodemailer, and Passport OAuth.
 
+### Features Included
+
+- ✅ User Authentication (Register, Login, OAuth)
+- ✅ Password Reset via Email
+- ✅ Dashboard with Route & Map View
+- ✅ Bus Stops Directory
+- ✅ Travel History Tracking
+- ✅ User Feedback System
+- ✅ Session Management
+
 ## Main Files
+
+### Core Files
 
 - `server.js`: Express server, API routes, sessions, login, registration, password reset, and OAuth callbacks.
 - `db.js`: MySQL connection pool.
 - `script.js`: Frontend form handling, notifications, session checks, and OAuth button behavior.
 - `style.css`: Shared frontend styling.
+
+### HTML Pages
+
 - `index.html`: Landing page.
 - `log_in.html`: Login page with Google and Facebook buttons.
 - `sign_in.html`: Account registration page.
-- `dashboard.html`: Authenticated dashboard.
+- `dashboard.html`: **NEW** Authenticated dashboard with routes, stops, feedback, and history views.
 - `forgot_pass.html`: Password reset request page.
 - `reset_pass.html`: New password page.
-- `database.sql`: Database and `users` table definition.
+
+### Database Files
+
+- `database.sql`: Database and all table definitions (users, routes, bus_stops, travel_history, feedback, route_stops).
+- `sample-data.sql`: **NEW** Sample routes, stops, and route connections.
 - `setup-db.js`: Creates the database from `database.sql`.
+
+### Configuration Files
+
 - `.env.example`: Environment variable template.
 - `.env`: Local secrets and settings. Never commit this file.
 - `GUIDE.md`: Installation and configuration instructions.
+- `package.json`: Project dependencies.
 
 ## Before Editing
 
@@ -33,33 +56,161 @@ git status --short
 git branch --show-current
 ```
 
-1. Read the relevant file and its nearby callers before changing it.
-1. Preserve existing user changes. Do not reset or overwrite unrelated work.
-1. Keep changes focused on the requested behavior.
-1. Do not place passwords, API keys, OAuth secrets, or database credentials in tracked files.
+2. Read the relevant file and its nearby callers before changing it.
+3. Preserve existing user changes. Do not reset or overwrite unrelated work.
+4. Keep changes focused on the requested behavior.
+5. Do not place passwords, API keys, OAuth secrets, or database credentials in tracked files.
 
 ## Local Setup
 
-1. Open XAMPP Control Panel and start **Apache** and **MySQL**.
-1. Open PowerShell and move to the project folder:
+### 1. Start Database Server
+
+Open XAMPP Control Panel and start **Apache** and **MySQL**.
+
+### 2. Navigate to Project Folder
+
+Open PowerShell and move to the project folder:
 
 ```powershell
 cd C:\xampp\htdocs\Nextstop
 ```
 
-1. Install the project dependencies:
+### 3. Install Dependencies
+
+Install the project dependencies:
 
 ```powershell
 npm install
 ```
 
-1. Start the application:
+### 4. Set Up Database
+
+Create the database and tables by running:
+
+```powershell
+node setup-db.js
+```
+
+This creates the `nextstop_db` database with all required tables.
+
+### 5. (Optional) Load Sample Data
+
+To populate sample bus routes and stops, run in phpMyAdmin or MySQL CLI:
+
+```sql
+-- Source the sample data file
+source sample-data.sql;
+```
+
+Or use MySQL command line:
+
+```powershell
+mysql -u root nextstop_db < sample-data.sql
+```
+
+### 6. Configure Environment
+
+Create or update the `.env` file with your settings (see **Environment** section below).
+
+### 7. Start the Application
 
 ```powershell
 node server.js
 ```
 
-1. Keep the PowerShell window open and open `http://localhost:3000` in a browser.
+The application will display:
+
+```
+[SYSTEM] NextStop Server Started!
+[SYSTEM] Running on http://localhost:3000
+[DATABASE] [SUCCESS] Successfully connected to MySQL (XAMPP)
+```
+
+Keep the PowerShell window open.
+
+### 8. Open in Browser
+
+Visit `http://localhost:3000` in your browser:
+
+- **New Users**: Click "Create Account" on the login page
+- **Existing Users**: Enter your credentials
+- **After Login**: You'll be redirected to the dashboard
+
+## Dashboard Features
+
+### Routes & Map View
+
+- View all active bus routes with real-time status
+- See route names, numbers, start/end locations
+- Check ETA, frequency, and capacity
+- Interactive map showing route locations
+- Real-time bus status indicators
+
+### Bus Stops
+
+- Browse all active bus stops
+- View stop types (Active stop, Transfer hub, etc.)
+- See distance information
+
+### Feedback System
+
+- Submit feedback about bus service
+- Rate routes (1-5 stars)
+- Categorize feedback (Service, Timing, Cleanliness, etc.)
+- View your previous feedback submissions
+
+### Travel History
+
+- Automatic tracking of bus trips
+- View trip dates, times, and routes
+- Historical record of all journeys
+
+## API Endpoints
+
+### Authentication
+
+- `POST /api/register` - Create new account
+- `POST /api/login` - Log in to account
+- `POST /api/logout` - Log out of account
+- `GET /api/session` - Check session status
+- `POST /api/forgot-password` - Request password reset
+- `POST /api/reset-password` - Reset password with token
+
+### Dashboard
+
+- `GET /api/routes` - Get all active bus routes
+- `GET /api/routes/:id` - Get route details with stops
+- `GET /api/stops` - Get all bus stops
+- `GET /api/history` - Get user's travel history
+- `POST /api/history` - Log a trip to history
+- `GET /api/feedback` - Get user's feedback submissions
+- `POST /api/feedback` - Submit new feedback
+
+## Database Schema
+
+### users
+
+Stores user account information and authentication credentials.
+
+### routes
+
+Contains bus route information including name, number, color, start/end locations, status, and capacity.
+
+### bus_stops
+
+Stores all bus stop locations with coordinates and type information.
+
+### travel_history
+
+Records all trips taken by users with timestamps and route information.
+
+### feedback
+
+Stores user feedback submissions with optional ratings and categories.
+
+### route_stops
+
+Maps which stops belong to which routes in a specific order.
 
 ## Environment
 
@@ -74,7 +225,6 @@ When moving from the old PC, copy the actual `.env` file separately using a priv
 If you do not have the old `.env` file, create a new one and paste this configuration:
 
 ```env
-
 # Server Configuration
 PORT=3000
 SESSION_SECRET=nextstop_bgc_enterprise_secure_key_2026
@@ -99,7 +249,66 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret_here
 # OAuth Configuration (Facebook)
 FACEBOOK_APP_ID=your_facebook_app_id_here
 FACEBOOK_APP_SECRET=your_facebook_app_secret_here
+FACEBOOK_CALLBACK_URL=http://localhost:3000/api/auth/facebook/callback
 ```
+
+## Troubleshooting
+
+### Database Connection Error
+
+- Ensure XAMPP MySQL is running (green indicator in XAMPP panel)
+- Check that `localhost:3306` is accessible
+- Verify `DB_HOST`, `DB_USER`, and `DB_PASS` in `.env`
+
+### Database Not Found
+
+- Run `node setup-db.js` to create the database
+- Verify the file exists: `database.sql`
+
+### Email Not Sending
+
+- Gmail requires an "App Password" (not your regular Gmail password)
+- Generate one at: https://myaccount.google.com/apppasswords
+- Store the 16-character password in `EMAIL_PASS` in `.env`
+
+### OAuth Not Working
+
+- Ensure you have valid Google/Facebook app credentials
+- Update `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` in `.env`
+- Update `FACEBOOK_APP_ID`, `FACEBOOK_APP_SECRET` in `.env`
+- Restart the server after changing `.env`
+
+### Session Timeout
+
+- Default session timeout is 20 minutes
+- Sessions are stored in browser cookies
+- Inactivity will require re-login
+
+## Testing Checklist
+
+- [ ] Server starts without errors
+- [ ] Can access `http://localhost:3000`
+- [ ] Can create a new account
+- [ ] Can log in with new account
+- [ ] Dashboard loads with routes
+- [ ] Can view bus stops
+- [ ] Can submit feedback
+- [ ] Can view travel history
+- [ ] Map displays route locations
+- [ ] Can log out successfully
+
+## Development Notes
+
+- **Session Duration**: 20 minutes of inactivity
+- **Max Capacity**: 40 passengers per bus
+- **Route Colors**: Green (#2d967f), Blue (#1976d2), Orange (#f59e0b), Purple (#7c3aed)
+- **Database**: MySQL via XAMPP
+- **Frontend**: Vanilla JavaScript (no frameworks)
+- **Authentication**: Sessions + bcrypt password hashing
+- **OAuth Providers**: Google and Facebook
+  FACEBOOK_APP_SECRET=your_facebook_app_secret_here
+
+````
 
 Replace the placeholders with the real values from the old private `.env` file when email or OAuth login is needed. For a basic local test, the database values are enough. Do not put real passwords or OAuth secrets in this guide.
 
@@ -128,7 +337,7 @@ You can also create a new database from PowerShell:
 ```powershell
 cd C:\xampp\htdocs\Nextstop
 node setup-db.js
-```
+````
 
 Do not use both methods for the same new database. Choose one method.
 

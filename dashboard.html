@@ -107,92 +107,27 @@
             <div class="search-box">
               <div class="input-field-icon">
                 <span class="dot dot-green"></span>
-                <input type="text" placeholder="From-e.g Caloocan" value="From-e.g Caloocan">
+                <input type="text" id="from-location" placeholder="From-e.g Caloocan">
               </div>
               <div class="input-field-icon">
                 <span class="dot dot-red"></span>
-                <input type="text" placeholder="To-e.g VGC" value="To-e.g VGC">
+                <input type="text" id="to-location" placeholder="To-e.g VGC">
               </div>
-              <button class="btn-find-routes">Find Routes</button>
+              <button class="btn-find-routes" id="find-routes-btn">Find Routes</button>
             </div>
 
-            <div class="best-match-banner">
+            <div class="best-match-banner" id="best-match-banner" style="display: none;">
               <div class="match-icon"><i class="fa-solid fa-check"></i></div>
               <div>
-                <strong>Best match: BGC Express</strong>
-                <p>SM Aurora Premier &rarr; High Street Central. ETA 4 min</p>
+                <strong id="best-match-title">Best match</strong>
+                <p id="best-match-details"></p>
               </div>
             </div>
 
             <div class="routes-section">
               <span class="section-subtitle">ALL ROUTES</span>
-
-              <div class="route-card active-card">
-                <div class="card-header">
-                  <span class="route-title">
-                    <span class="dot dot-green"></span>
-                    <strong>BGC Express</strong> <small>BGC-101</small>
-                  </span>
-                  <span class="badge badge-green">ON TIME</span>
-                </div>
-                <p class="route-stops">SM Aurora Premier &rarr; High Street Central</p>
-                <div class="card-footer">
-                  <span class="eta-text text-green">ETA 4 min</span>
-                  <span class="frequency">Every 8 min</span>
-                  <div class="capacity-bar"><div class="fill fill-green" style="width: 30%;"></div></div>
-                  <span class="capacity-num">12/40</span>
-                </div>
-              </div>
-
-              <div class="route-card">
-                <div class="card-header">
-                  <span class="route-title">
-                    <span class="dot dot-blue"></span>
-                    <strong>Uptown Shutter</strong> <small>BGC-204</small>
-                  </span>
-                  <span class="badge badge-green">ON TIME</span>
-                </div>
-                <p class="route-stops">SM Aurora Premier &rarr; High Street Central</p>
-                <div class="card-footer">
-                  <span class="eta-text text-green">ETA 7 min</span>
-                  <span class="frequency">Every 12 min</span>
-                  <div class="capacity-bar"><div class="fill fill-blue" style="width: 70%;"></div></div>
-                  <span class="capacity-num">28/40</span>
-                </div>
-              </div>
-
-              <div class="route-card">
-                <div class="card-header">
-                  <span class="route-title">
-                    <span class="dot dot-orange"></span>
-                    <strong>Venice Loop</strong> <small>BGC-317</small>
-                  </span>
-                  <span class="badge badge-orange">DELAY</span>
-                </div>
-                <p class="route-stops">SM Aurora Premier &rarr; High Street Central</p>
-                <div class="card-footer">
-                  <span class="eta-text text-green">ETA 11 min</span>
-                  <span class="frequency">Every 15 min</span>
-                  <div class="capacity-bar"><div class="fill fill-orange" style="width: 15%;"></div></div>
-                  <span class="capacity-num">5/40</span>
-                </div>
-              </div>
-
-              <div class="route-card">
-                <div class="card-header">
-                  <span class="route-title">
-                    <span class="dot dot-purple"></span>
-                    <strong>Bonifacio Link</strong> <small>BGC-409</small>
-                  </span>
-                  <span class="badge badge-green">ON TIME</span>
-                </div>
-                <p class="route-stops">SM Aurora Premier &rarr; High Street Central</p>
-                <div class="card-footer">
-                  <span class="eta-text text-green">ETA 3 min</span>
-                  <span class="frequency">Every 10 min</span>
-                  <div class="capacity-bar"><div class="fill fill-purple" style="width: 82%;"></div></div>
-                  <span class="capacity-num">33/40</span>
-                </div>
+              <div id="routes-container" class="routes-container">
+                <div style="text-align: center; padding: 20px; color: #999;">Loading routes...</div>
               </div>
             </div>
           </section>
@@ -206,10 +141,8 @@
       <div class="view-panel" data-view-panel="stops">
         <div class="content-panel">
           <h3>Bus Stops</h3>
-          <div class="info-list">
-            <div class="info-card"><strong>SM Aurora Premier</strong><span>Active stop • 2 min away</span></div>
-            <div class="info-card"><strong>High Street Central</strong><span>Popular stop • 4 min away</span></div>
-            <div class="info-card"><strong>Bonifacio Global City Gate</strong><span>Transfer hub • 6 min away</span></div>
+          <div id="stops-container" class="info-list">
+            <div style="text-align: center; padding: 20px; color: #999;">Loading bus stops...</div>
           </div>
         </div>
       </div>
@@ -217,20 +150,47 @@
       <div class="view-panel" data-view-panel="feedback">
         <div class="content-panel">
           <h3>Feedback</h3>
-          <form class="feedback-form">
-            <textarea placeholder="Share your feedback about bus service, route timing, or cleanliness..."></textarea>
-            <button type="button" class="btn-save-profile">Submit feedback</button>
+          <form class="feedback-form" id="feedback-form">
+            <div style="margin-bottom: 12px;">
+              <label for="feedback-category" style="display: block; margin-bottom: 6px; font-weight: 600;">Category (optional)</label>
+              <select id="feedback-category" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                <option value="">Select a category</option>
+                <option value="Service">Service Quality</option>
+                <option value="Timing">Route Timing</option>
+                <option value="Cleanliness">Cleanliness</option>
+                <option value="Driver">Driver Behavior</option>
+                <option value="Safety">Safety</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div style="margin-bottom: 12px;">
+              <label for="feedback-rating" style="display: block; margin-bottom: 6px; font-weight: 600;">Rating (optional)</label>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" class="rating-btn" data-rating="1">⭐</button>
+                <button type="button" class="rating-btn" data-rating="2">⭐⭐</button>
+                <button type="button" class="rating-btn" data-rating="3">⭐⭐⭐</button>
+                <button type="button" class="rating-btn" data-rating="4">⭐⭐⭐⭐</button>
+                <button type="button" class="rating-btn" data-rating="5">⭐⭐⭐⭐⭐</button>
+              </div>
+              <input type="hidden" id="feedback-rating" value="">
+            </div>
+            <textarea id="feedback-text" placeholder="Share your feedback about bus service, route timing, or cleanliness..." style="margin-bottom: 12px;"></textarea>
+            <button type="submit" class="btn-save-profile">Submit feedback</button>
           </form>
+          <div id="submitted-feedback" style="margin-top: 30px;">
+            <h4 style="margin-bottom: 15px;">Your Feedback</h4>
+            <div id="feedback-list" class="info-list">
+              <div style="text-align: center; padding: 20px; color: #999;">Loading feedback...</div>
+            </div>
+          </div>
         </div>
       </div>
 
       <div class="view-panel" data-view-panel="history">
         <div class="content-panel">
           <h3>Travel History</h3>
-          <div class="info-list">
-            <div class="info-card"><strong>Route BGC Express</strong><span>Today • 08:10 AM</span></div>
-            <div class="info-card"><strong>Route Uptown Shutter</strong><span>Yesterday • 06:45 PM</span></div>
-            <div class="info-card"><strong>Route Bonifacio Link</strong><span>Monday • 07:30 AM</span></div>
+          <div id="history-container" class="info-list">
+            <div style="text-align: center; padding: 20px; color: #999;">Loading travel history...</div>
           </div>
         </div>
       </div>
@@ -241,9 +201,309 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   
-
   <script>
+    // ==================== DASHBOARD STATE ====================
+    const dashboardState = {
+      routes: [],
+      stops: [],
+      history: [],
+      feedback: [],
+      selectedRating: null,
+      map: null,
+      markers: []
+    };
+
+    // TEMPORARY DEMO DATA 
+    const temporaryLiveBusStatus = [
+      {
+        route_name: 'BGC Express',
+        route_number: 'BGC-01',
+        route_color: '#2d967f',
+        status: 'ON_TIME',
+        eta_minutes: 4,
+        frequency_minutes: 15,
+        current_capacity: 24,
+        max_capacity: 40,
+        start_location: 'Caloocan',
+        end_location: 'BGC',
+        start_lat: 14.6120,
+        start_lng: 121.0240
+      },
+      {
+        route_name: 'Uptown Shutter',
+        route_number: 'UP-02',
+        route_color: '#1976d2',
+        status: 'ON_TIME',
+        eta_minutes: 7,
+        frequency_minutes: 20,
+        current_capacity: 18,
+        max_capacity: 35,
+        start_location: 'Makati',
+        end_location: 'Quezon City',
+        start_lat: 14.5650,
+        start_lng: 121.0380
+      },
+      {
+        route_name: 'Venice Loop',
+        route_number: 'VEN-03',
+        route_color: '#f59e0b',
+        status: 'DELAY',
+        eta_minutes: 11,
+        frequency_minutes: 25,
+        current_capacity: 31,
+        max_capacity: 38,
+        start_location: 'Taguig',
+        end_location: 'Pasay',
+        start_lat: 14.5450,
+        start_lng: 121.0580
+      },
+      {
+        route_name: 'Bonifacio Link',
+        route_number: 'BL-04',
+        route_color: '#8b5cf6',
+        status: 'ON_TIME',
+        eta_minutes: 3,
+        frequency_minutes: 10,
+        current_capacity: 22,
+        max_capacity: 30,
+        start_location: 'Ortigas',
+        end_location: 'Bonifacio',
+        start_lat: 14.5880,
+        start_lng: 121.0470
+      }
+    ];
+
+    // ==================== ROUTES FUNCTIONALITY ====================
+    async function loadRoutes() {
+      try {
+        const response = await fetch('/api/routes');
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Unknown route error' }));
+          console.error('API Error:', errorData);
+          // TEMPORARY FALLBACK - REMOVE WHEN LIVE DATA IS ACTIVE
+          dashboardState.routes = temporaryLiveBusStatus;
+          renderRoutes(dashboardState.routes);
+          updateMap();
+          showNotification(`Routes Error: ${errorData.error}. Showing temporary demo routes.`, 'error');
+          return;
+        }
+        
+        const data = await response.json();
+        console.log('Routes loaded:', data);
+        
+        dashboardState.routes = data.routes && data.routes.length ? data.routes : temporaryLiveBusStatus;
+        renderRoutes(dashboardState.routes);
+        updateMap();
+      } catch (err) {
+        console.error('Error loading routes:', err);
+        // TEMPORARY FALLBACK - REMOVE WHEN LIVE DATA IS ACTIVE
+        dashboardState.routes = temporaryLiveBusStatus;
+        renderRoutes(dashboardState.routes);
+        updateMap();
+        showNotification('Using temporary demo routes while the backend is unavailable.', 'error');
+      }
+    }
+
+    function renderRoutes(routes) {
+      const container = document.getElementById('routes-container');
+      container.innerHTML = '';
+
+      if (!routes || routes.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; padding: 20px; color: #999;">
+            <p>No routes available</p>
+            <p style="font-size: 12px; margin-top: 10px; color: #bbb;">
+              Make sure to load sample data with: mysql -u root nextstop_db < sample-data.sql
+            </p>
+          </div>
+        `;
+        return;
+      }
+
+      routes.forEach((route, index) => {
+        const capacityPercent = (route.current_capacity / route.max_capacity) * 100;
+        const colorClass = route.route_color.includes('2d967f') ? 'dot-green' : 
+                           route.route_color.includes('1976d2') ? 'dot-blue' :
+                           route.route_color.includes('f59e0b') ? 'dot-orange' : 'dot-purple';
+        
+        const card = document.createElement('div');
+        card.className = `route-card ${index === 0 ? 'active-card' : ''}`;
+        card.innerHTML = `
+          <div class="card-header">
+            <span class="route-title">
+              <span class="dot ${colorClass}"></span>
+              <strong>${route.route_name}</strong> <small>${route.route_number}</small>
+            </span>
+            <span class="badge badge-${route.status === 'ON_TIME' ? 'green' : 'orange'}">${route.status === 'ON_TIME' ? 'ON TIME' : 'DELAY'}</span>
+          </div>
+          <p class="route-stops">${route.start_location} &rarr; ${route.end_location}</p>
+          <div class="card-footer">
+            <span class="eta-text text-${route.status === 'ON_TIME' ? 'green' : 'orange'}">ETA ${route.eta_minutes} min</span>
+            <span class="frequency">Every ${route.frequency_minutes} min</span>
+            <div class="capacity-bar"><div class="fill fill-${route.status === 'ON_TIME' ? (route.current_capacity < 20 ? 'green' : route.current_capacity < 30 ? 'blue' : 'orange') : 'orange'}" style="width: ${capacityPercent}%;"></div></div>
+            <span class="capacity-num">${route.current_capacity}/${route.max_capacity}</span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // ==================== STOPS FUNCTIONALITY ====================
+    async function loadStops() {
+      try {
+        const response = await fetch('/api/stops');
+        const data = await response.json();
+        dashboardState.stops = data.stops || [];
+        renderStops(dashboardState.stops);
+      } catch (err) {
+        console.error('Error loading stops:', err);
+        showNotification('Failed to load bus stops', 'error');
+      }
+    }
+
+    function renderStops(stops) {
+      const container = document.getElementById('stops-container');
+      container.innerHTML = '';
+
+      if (stops.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">No bus stops available</div>';
+        return;
+      }
+
+      stops.forEach(stop => {
+        const card = document.createElement('div');
+        card.className = 'info-card';
+        card.innerHTML = `
+          <strong>${stop.stop_name}</strong>
+          <span>${stop.stop_type}${stop.distance_km ? ' • ' + stop.distance_km + ' km away' : ''}</span>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // ==================== HISTORY FUNCTIONALITY ====================
+    async function loadHistory() {
+      try {
+        const response = await fetch('/api/history');
+        const data = await response.json();
+        dashboardState.history = data.history || [];
+        renderHistory(dashboardState.history);
+      } catch (err) {
+        console.error('Error loading history:', err);
+        showNotification('Failed to load travel history', 'error');
+      }
+    }
+
+    function renderHistory(history) {
+      const container = document.getElementById('history-container');
+      container.innerHTML = '';
+
+      if (history.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">No travel history yet</div>';
+        return;
+      }
+
+      history.forEach(trip => {
+        const card = document.createElement('div');
+        card.className = 'info-card';
+        const date = new Date(trip.travel_date);
+        const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        card.innerHTML = `
+          <strong>Route ${trip.route_name} (${trip.route_number})</strong>
+          <span>${trip.from_stop} → ${trip.to_stop}</span>
+          <span style="font-size: 0.9em; color: #666;">${dateStr} • ${trip.travel_time}</span>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // ==================== FEEDBACK FUNCTIONALITY ====================
+    async function loadFeedback() {
+      try {
+        const response = await fetch('/api/feedback');
+        const data = await response.json();
+        dashboardState.feedback = data.feedback || [];
+        renderFeedback(dashboardState.feedback);
+      } catch (err) {
+        console.error('Error loading feedback:', err);
+      }
+    }
+
+    function renderFeedback(feedback) {
+      const container = document.getElementById('feedback-list');
+      container.innerHTML = '';
+
+      if (feedback.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">No feedback submitted yet</div>';
+        return;
+      }
+
+      feedback.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'info-card';
+        const date = new Date(item.created_at);
+        const dateStr = date.toLocaleDateString();
+        card.innerHTML = `
+          <strong>${item.route_name || 'General Feedback'}</strong>
+          <span>${item.feedback_text.substring(0, 100)}${item.feedback_text.length > 100 ? '...' : ''}</span>
+          <span style="font-size: 0.9em; color: #666;">${dateStr}${item.rating ? ' • ' + '⭐'.repeat(item.rating) : ''}</span>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // ==================== MAP FUNCTIONALITY ====================
+    function initMap() {
+      if (dashboardState.map) return;
+      
+      const mapContainer = document.getElementById('map-container');
+      if (!mapContainer) return;
+
+      dashboardState.map = L.map('map-container').setView([14.5515, 121.0505], 14);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(dashboardState.map);
+    }
+
+    function updateMap() {
+      if (!dashboardState.map) initMap();
+
+      // Clear existing markers
+      dashboardState.markers.forEach(marker => dashboardState.map.removeLayer(marker));
+      dashboardState.markers = [];
+
+      // Add route markers
+      dashboardState.routes.forEach(route => {
+        const marker = L.marker([route.start_lat, route.start_lng]).addTo(dashboardState.map);
+        marker.bindPopup(`<b>${route.route_name}</b><br>${route.route_number}<br>Status: ${route.status}`);
+        dashboardState.markers.push(marker);
+      });
+    }
+
+    // ==================== EVENT LISTENERS ====================
     document.addEventListener('DOMContentLoaded', async () => {
+      // Session check
+      try {
+        const response = await fetch('/api/session');
+        const data = await response.json();
+
+        if (!data.loggedIn) {
+          alert('Unauthorized access! Please log in first.');
+          window.location.href = 'log_in.html';
+          return;
+        }
+
+        const usernameElem = document.getElementById('sidebar-username');
+        if (usernameElem && data.username) {
+          usernameElem.textContent = data.username;
+        }
+      } catch (err) {
+        window.location.href = 'log_in.html';
+        return;
+      }
+
+      // Navigation
       const navItems = document.querySelectorAll('.nav-item');
       const viewPanels = document.querySelectorAll('[data-view-panel]');
       const title = document.getElementById('view-title');
@@ -266,28 +526,21 @@
           if (title && viewTitles[selectedView]) {
             title.textContent = viewTitles[selectedView];
           }
+
+          // Load data for the selected view
+          if (selectedView === 'routes') {
+            setTimeout(() => { if (dashboardState.map) dashboardState.map.invalidateSize(); }, 100);
+          } else if (selectedView === 'stops' && dashboardState.stops.length === 0) {
+            loadStops();
+          } else if (selectedView === 'history' && dashboardState.history.length === 0) {
+            loadHistory();
+          } else if (selectedView === 'feedback' && dashboardState.feedback.length === 0) {
+            loadFeedback();
+          }
         });
       });
 
-      try {
-        const response = await fetch('/api/session');
-        const data = await response.json();
-
-        if (!data.loggedIn) {
-          alert('Unauthorized access! Please log in first.');
-          window.location.href = 'log_in.html';
-          return;
-        }
-
-        const usernameElem = document.getElementById('sidebar-username');
-        if (usernameElem && data.username) {
-          usernameElem.textContent = data.username;
-        }
-      } catch (err) {
-        window.location.href = 'log_in.html';
-        return;
-      }
-
+      // Logout
       const logoutBtn = document.getElementById('logout-btn');
       if (logoutBtn) {
         logoutBtn.addEventListener('click', async () => {
@@ -296,18 +549,77 @@
         });
       }
 
-      const mapContainer = document.getElementById('map-container');
-      if (mapContainer && window.L) {
-        const map = L.map('map-container').setView([14.5515, 121.0505], 15);
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
-
-        L.marker([14.5515, 121.0505]).addTo(map)
-          .bindPopup('<b>BGC Express (BGC-101)</b><br>On Time - High Street Central')
-          .openPopup();
+      // Find routes
+      const findRoutesBtn = document.getElementById('find-routes-btn');
+      if (findRoutesBtn) {
+        findRoutesBtn.addEventListener('click', () => {
+          // For now, just load all routes
+          loadRoutes();
+        });
       }
+
+      // Feedback rating buttons
+      const ratingBtns = document.querySelectorAll('.rating-btn');
+      ratingBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          ratingBtns.forEach(b => b.style.opacity = '0.5');
+          btn.style.opacity = '1';
+          dashboardState.selectedRating = btn.dataset.rating;
+          document.getElementById('feedback-rating').value = dashboardState.selectedRating;
+        });
+      });
+
+      // Feedback form submission
+      const feedbackForm = document.getElementById('feedback-form');
+      if (feedbackForm) {
+        feedbackForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          
+          const feedbackText = document.getElementById('feedback-text').value.trim();
+          const rating = document.getElementById('feedback-rating').value;
+          const category = document.getElementById('feedback-category').value;
+
+          if (!feedbackText) {
+            showNotification('Please enter your feedback', 'error');
+            return;
+          }
+
+          try {
+            const response = await fetch('/api/feedback', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                feedbackText,
+                rating: rating ? parseInt(rating) : null,
+                category: category || null
+              })
+            });
+
+            if (response.ok) {
+              showNotification('Feedback submitted successfully!', 'success');
+              feedbackForm.reset();
+              dashboardState.selectedRating = null;
+              ratingBtns.forEach(b => b.style.opacity = '0.5');
+              await loadFeedback();
+            } else {
+              showNotification('Failed to submit feedback', 'error');
+            }
+          } catch (err) {
+            showNotification('Error submitting feedback', 'error');
+          }
+        });
+      }
+
+      // Temporary demo output for dashboard mockup
+      dashboardState.routes = temporaryLiveBusStatus;
+      renderRoutes(dashboardState.routes);
+      initMap();
+      updateMap();
+
+      // Try to load real data after display, but keep demo content if backend is unavailable
+      await loadRoutes();
+      await loadStops();
     });
   </script>
 </body>
