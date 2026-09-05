@@ -42,7 +42,7 @@ body {
   min-height: 140px;
   background:
     linear-gradient(179.99deg, rgba(22, 41, 80, 0) 80.61%, #ffffff 94.84%),
-    url("assets/bgc-bg.png") center/cover no-repeat;
+    url("../assets/bgc-bg.png") center/cover no-repeat;
   display: flex;
   justify-content: center;
   align-items: flex-start;

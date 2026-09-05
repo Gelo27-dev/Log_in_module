@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Reset Password</title>
+    <title>Forgot Password</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -12,72 +12,59 @@
       rel="stylesheet"
     />
 
-    <link rel="stylesheet" href="style.css" />
-    <script src="script.js" defer></script>
+    <link rel="stylesheet" href="/css/style.css" />
+    <script src="/js/script.js" defer></script>
   </head>
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      
-      const urlParams = new URLSearchParams(window.location.search);
-      const token = urlParams.get("token");
-
-      if (!token) {
-        alert(
-          "Invalid or missing password reset token. Please request a new link.",
-        );
-        window.location.href = "forgot_pass.html";
-        return;
-      }
-
-      
-      const newPasswordInput =
-        document.querySelector('input[name="newPassword"]') ||
-        document.querySelectorAll('input[type="password"]')[0];
-      const confirmPasswordInput =
-        document.querySelector('input[name="confirmPassword"]') ||
-        document.querySelectorAll('input[type="password"]')[1];
+      const emailInput = document.querySelector('input[type="email"]');
       const submitBtn = document.querySelector("button");
 
       submitBtn.addEventListener("click", async (e) => {
         e.preventDefault();
 
-        const newPassword = newPasswordInput.value;
-        const confirmPassword = confirmPasswordInput
-          ? confirmPasswordInput.value
-          : newPassword;
+        const email = emailInput.value.trim();
 
-        if (!newPassword) {
-          alert("Please enter a new password.");
-          return;
-        }
-
-        if (newPassword !== confirmPassword) {
-          alert("Passwords do not match!");
+        if (!email) {
+          alert("Please enter your email address.");
           return;
         }
 
         submitBtn.disabled = true;
-        submitBtn.textContent = "Updating...";
+        const originalBtnText = submitBtn.textContent;
+        submitBtn.textContent = "Sending Link...";
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 12000);
 
         try {
-          const response = await fetch("/api/reset-password", {
+          const response = await fetch("/api/forgot-password", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ token, newPassword }),
+            body: JSON.stringify({ email }),
+            signal: controller.signal,
           });
 
+          clearTimeout(timeoutId);
           const data = await response.json();
 
           if (!response.ok) {
-            throw new Error(data.error || "Failed to reset password.");
+            throw new Error(data.error || "Failed to send reset link.");
           }
 
-          alert(data.message); 
-          window.location.href = "log_in.html"; 
+          alert(data.message);
+          emailInput.value = "";
         } catch (err) {
-          alert(err.message);
+          if (err.name === "AbortError") {
+            alert(
+              "Request timed out! Please check your server terminal or Gmail credentials.",
+            );
+          } else {
+            alert(err.message);
+          }
+        } finally {
           submitBtn.disabled = false;
-          submitBtn.textContent = "Reset Password";
+          submitBtn.textContent = originalBtnText;
         }
       });
     });
@@ -89,7 +76,7 @@
       <section class="hero-panel">
         <div class="logo-container">
           <img
-            src="assets/logo-nextstop.png"
+            src="/assets/logo-nextstop.png"
             alt="NextStop BGC Logo"
             class="brand-logo"
           />
@@ -98,24 +85,24 @@
 
       <section class="form-panel">
         <div class="content-box">
-          <h1 class="main-title">Set New Password</h1>
+          <h1 class="main-title">Forgot Password</h1>
           <p class="main-description text-bold">
-            Enter your new strong password below.
+            Enter your email address to receive a password reset link.
           </p>
 
           <form class="login-form">
             <div class="input-group">
-              <label for="new-password">NEW PASSWORD</label>
+              <label for="reset-email">EMAIL ADDRESS</label>
               <input
-                type="password"
-                id="new-password"
-                placeholder="Enter new password"
+                type="email"
+                id="reset-email"
+                placeholder="Enter your registered email"
                 required
               />
             </div>
 
             <button type="submit" class="btn btn-login form-submit-btn">
-              Update Password
+              Send Reset Link
             </button>
           </form>
 

@@ -6,11 +6,11 @@
  * Tests API endpoints and displays expected outputs
  *
  * Usage:
- *   node test-api.js
+ *   npm run test:api
  *
  * Prerequisites:
- *   1. Start server: node server.js
- *   2. Load test data: mysql -u root nextstop_db < test-data.sql
+ *   1. Start server: npm start
+ *   2. Load test data: mysql -u root nextstop_db < database/test-data.sql
  *   3. Create test user (register or login)
  */
 

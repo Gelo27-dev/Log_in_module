@@ -1,5 +1,3 @@
-// Keep the original startup command working while the application lives in server/app.js.
-require("./server/app");
 require("dotenv").config();
 const express = require("express");
 const session = require("express-session");
@@ -10,7 +8,7 @@ const nodemailer = require("nodemailer");
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const FacebookStrategy = require("passport-facebook").Strategy;
-const db = require("./db");
+const db = require("./config/database");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -287,7 +285,11 @@ passport.deserializeUser(async (id, done) => {
   }
 });
 
-app.use(express.static(__dirname));
+const clientPath = path.join(__dirname, "..", "client");
+app.use(express.static(path.join(clientPath, "pages")));
+app.use("/js", express.static(path.join(clientPath, "js")));
+app.use("/css", express.static(path.join(clientPath, "css")));
+app.use("/assets", express.static(path.join(clientPath, "assets")));
 
 const INACTIVITY_TIMEOUT = 20 * 60 * 1000; // 20 minutes
 
@@ -1352,7 +1354,7 @@ app.get("/api/audit/api-stats", requireAuth, async (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
+  res.sendFile(path.join(__dirname, "..", "client", "pages", "index.html"));
 });
 
 app.listen(PORT, () => {

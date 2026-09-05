@@ -3,7 +3,6 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Log In</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -12,8 +11,8 @@
       rel="stylesheet"
     />
 
-    <link rel="stylesheet" href="style.css" />
-    <script src="script.js" defer></script>
+    <link rel="stylesheet" href="/css/style.css" />
+    <script src="/js/script.js" defer></script>
   </head>
   <body>
     <div id="notification-container"></div>
@@ -22,7 +21,7 @@
       <section class="hero-panel">
         <div class="logo-container">
           <img
-            src="assets/logo-nextstop.png"
+            src="/assets/logo-nextstop.png"
             alt="NextStop BGC Logo"
             class="brand-logo"
           />
@@ -31,46 +30,19 @@
 
       <section class="form-panel">
         <div class="content-box">
-          <h1 class="main-title">Log in</h1>
-          <p class="main-description text-bold">
-            Don't have an account?
-            <a href="sign_in.html" class="signup-link">Sign up</a>
+          <h1 class="main-title">Get started</h1>
+          <p class="main-description">
+            Track buses, plan routes, and travel smarter across BGC.
           </p>
 
-          <form class="login-form">
-            <div class="input-group">
-              <label for="email-username">EMAIL OR USERNAME</label>
-              <input
-                type="text"
-                id="email-username"
-                placeholder="Enter Email or Username"
-                required
-              />
-            </div>
-
-            <div class="input-group">
-              <div class="label-row">
-                <label for="password">PASSWORD</label>
-                <a href="forgot_pass.html" class="forgot-link"
-                  >Forgot password?</a
-                >
-              </div>
-              <input
-                type="password"
-                id="password"
-                placeholder="Password"
-                required
-              />
-            </div>
-
-            <button type="submit" class="btn btn-login form-submit-btn">
-              Log in
-            </button>
-          </form>
+          <div class="button-group">
+            <a href="log_in.html" class="btn btn-login">Log in</a>
+            <a href="sign_in.html" class="btn btn-create">Create an Account</a>
+          </div>
 
           <div class="divider">
             <span class="divider-line"></span>
-            <span class="divider-text">Or log in with</span>
+            <span class="divider-text">Or continue with</span>
             <span class="divider-line"></span>
           </div>
 
@@ -118,8 +90,6 @@
               <span>Facebook</span>
             </a>
           </div>
-
-          <a href="index.html" class="back-link">&longleftarrow; Back</a>
         </div>
       </section>
     </main>

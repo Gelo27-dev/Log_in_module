@@ -160,7 +160,7 @@ I've created **3 comprehensive review guides** for you:
 3. **Setup database**:
 
    ```bash
-   node setup-db.js
+   npm run setup-db
    ```
 
 4. **Start server**:
@@ -207,7 +207,7 @@ I've created **3 comprehensive review guides** for you:
 
 ### For Advanced Developers:
 
-1. Review **database schema** (database.sql, audit-database.sql)
+1. Review **database schema** (database/database.sql, database/audit-database.sql)
    - Foreign key relationships
    - Indexes for performance
    - Audit table design

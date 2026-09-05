@@ -20,31 +20,29 @@ NextStop is a Node.js and Express application for BGC bus tracking and user auth
 
 ### Core Files
 
-- `server.js`: Express server, API routes, sessions, login, registration, password reset, and OAuth callbacks.
-- `db.js`: MySQL connection pool.
-- `script.js`: Frontend form handling, notifications, session checks, and OAuth button behavior.
-- `style.css`: Shared frontend styling.
+- `server.js`: Startup launcher.
+- `server/app.js`: Express server, API routes, sessions, login, registration, password reset, and OAuth callbacks.
+- `server/config/database.js`: MySQL connection pool.
+- `client/js/script.js`: Frontend form handling, notifications, session checks, and OAuth button behavior.
+- `client/css/style.css`: Shared frontend styling.
 
 ### HTML Pages
 
-- `index.html`: Landing page.
-- `log_in.html`: Login page with Google and Facebook buttons.
-- `sign_in.html`: Account registration page.
-- `dashboard.html`: **NEW** Authenticated dashboard with routes, stops, feedback, and history views.
-- `forgot_pass.html`: Password reset request page.
-- `reset_pass.html`: New password page.
+- Pages are stored in `client/pages/`: landing, login, registration, dashboard, and password reset pages.
+- Shared browser assets are stored in `client/js/`, `client/css/`, and `client/assets/`.
 
 ### Database Files
 
-- `database.sql`: Database and all table definitions (users, routes, bus_stops, travel_history, feedback, route_stops).
-- `sample-data.sql`: **NEW** Sample routes, stops, and route connections.
-- `setup-db.js`: Creates the database from `database.sql`.
+- `database/database.sql`: Database and all table definitions (users, routes, bus_stops, travel_history, feedback, route_stops).
+- `database/sample-data.sql`: Sample routes, stops, and route connections.
+- `database/setup.js`: Creates the database from `database/database.sql`.
 
 ### Configuration Files
 
 - `.env.example`: Environment variable template.
 - `.env`: Local secrets and settings. Never commit this file.
 - `GUIDE.md`: Installation and configuration instructions.
+- `CODEBASE_WALKTHROUGH.md`: Detailed explanation of the application flow and file connections.
 - `package.json`: Project dependencies.
 
 ## Before Editing
@@ -88,7 +86,7 @@ npm install
 Create the database and tables by running:
 
 ```powershell
-node setup-db.js
+npm run setup-db
 ```
 
 This creates the `nextstop_db` database with all required tables.
@@ -99,13 +97,13 @@ To populate sample bus routes and stops, run in phpMyAdmin or MySQL CLI:
 
 ```sql
 -- Source the sample data file
-source sample-data.sql;
+source database/sample-data.sql;
 ```
 
 Or use MySQL command line:
 
 ```powershell
-mysql -u root nextstop_db < sample-data.sql
+mysql -u root nextstop_db < database/sample-data.sql
 ```
 
 ### 6. Configure Environment
@@ -115,7 +113,7 @@ Create or update the `.env` file with your settings (see **Environment** section
 ### 7. Start the Application
 
 ```powershell
-node server.js
+npm start
 ```
 
 The application will display:
@@ -262,8 +260,8 @@ FACEBOOK_CALLBACK_URL=http://localhost:3000/api/auth/facebook/callback
 
 ### Database Not Found
 
-- Run `node setup-db.js` to create the database
-- Verify the file exists: `database.sql`
+- Run `npm run setup-db` to create the database
+- Verify the file exists: `database/database.sql`
 
 ### Email Not Sending
 
@@ -328,7 +326,7 @@ The expected database is `nextstop_db` with a `users` table.
 1. Open XAMPP and start MySQL.
 1. Open `http://localhost/phpmyadmin`.
 1. Select the **Import** tab.
-1. Choose `database.sql` from this repository.
+1. Choose `database/database.sql` from this repository.
 1. Click **Import** or **Go**.
 1. Confirm that the `nextstop_db` database and `users` table appear in the left sidebar.
 
@@ -336,7 +334,7 @@ You can also create a new database from PowerShell:
 
 ```powershell
 cd C:\xampp\htdocs\Nextstop
-node setup-db.js
+npm run setup-db
 ````
 
 Do not use both methods for the same new database. Choose one method.
@@ -381,7 +379,7 @@ Before changing the database, export a backup in phpMyAdmin:
 1. Choose **Quick** and format **SQL**.
 1. Click **Export** and store the downloaded file somewhere safe.
 
-The backup contains the current user records. `database.sql` defines the table structure but may not contain the current user data.
+The backup contains the current user records. `database/database.sql` defines the table structure but may not contain the current user data.
 
 ### Restore a Backup
 

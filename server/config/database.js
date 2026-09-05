@@ -29,7 +29,7 @@ db.getConnection((err, connection) => {
     }
     if (err.code === "ER_BAD_DB_ERROR") {
       console.error(
-        "[DATABASE] Database 'nextstop_db' does not exist. Please run database.sql first.",
+        "[DATABASE] Database 'nextstop_db' does not exist. Please run database/database.sql first.",
       );
     }
     console.error("[DATABASE] Error:", err.message);
