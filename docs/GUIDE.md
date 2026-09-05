@@ -218,7 +218,7 @@ The application reads settings from a private `.env` file in the project folder:
 C:\xampp\htdocs\Nextstop\.env
 ```
 
-When moving from the old PC, copy the actual `.env` file separately using a private USB drive or a secure file transfer. Do not put it in the GitHub repository or inside this guide. On the new PC, place it beside `server.js` before running `node server.js`.
+When moving from the old PC, copy the actual `.env` file separately using a private USB drive or a secure file transfer. Do not put it in the GitHub repository or inside this guide. On the new PC, place it beside `server.js` before running `npm start`.
 
 If you do not have the old `.env` file, create a new one and paste this configuration:
 
@@ -304,9 +304,6 @@ FACEBOOK_CALLBACK_URL=http://localhost:3000/api/auth/facebook/callback
 - **Frontend**: Vanilla JavaScript (no frameworks)
 - **Authentication**: Sessions + bcrypt password hashing
 - **OAuth Providers**: Google and Facebook
-  FACEBOOK_APP_SECRET=your_facebook_app_secret_here
-
-````
 
 Replace the placeholders with the real values from the old private `.env` file when email or OAuth login is needed. For a basic local test, the database values are enough. Do not put real passwords or OAuth secrets in this guide.
 
@@ -319,25 +316,15 @@ Facebook also supports `FACEBOOK_CALLBACK_URL` in `.env`.
 
 ## Database
 
-The expected database is `nextstop_db` with a `users` table.
+The expected database is `nextstop_db` with the tables defined in `database/database.sql` and `database/audit-database.sql`.
 
 ### Create a New Database
 
 1. Open XAMPP and start MySQL.
-1. Open `http://localhost/phpmyadmin`.
-1. Select the **Import** tab.
-1. Choose `database/database.sql` from this repository.
-1. Click **Import** or **Go**.
-1. Confirm that the `nextstop_db` database and `users` table appear in the left sidebar.
+2. Run `npm run setup-db`, or import `database/database.sql` through phpMyAdmin.
+3. Confirm that the `nextstop_db` database and its tables appear.
 
-You can also create a new database from PowerShell:
-
-```powershell
-cd C:\xampp\htdocs\Nextstop
-npm run setup-db
-````
-
-Do not use both methods for the same new database. Choose one method.
+Do not use both methods for the same new database.
 
 ### SQL to Paste in XAMPP
 
@@ -421,7 +408,7 @@ Run the narrowest relevant check first. For JavaScript changes:
 
 ```powershell
 node --check server.js
-node --check script.js
+node --check client/js/script.js
 ```
 
 For authentication or database changes, start the server with XAMPP MySQL running and test registration, login, logout, password reset, and the affected OAuth flow.

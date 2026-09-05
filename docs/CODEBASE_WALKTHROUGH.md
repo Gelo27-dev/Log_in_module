@@ -1,6 +1,6 @@
 # NextStop Codebase Walkthrough
 
-This document explains how the application is connected and how to read it. It is written for someone who did not create the code and wants to understand what each important line or line group is doing.
+This document explains how the application is connected.
 
 ## 1. Start With The Big Picture
 

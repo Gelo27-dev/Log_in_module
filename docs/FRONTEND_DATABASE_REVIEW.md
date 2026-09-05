@@ -2,7 +2,7 @@
 
 ---
 
-## 📱 FRONTEND LOGIC REVIEW (script.js)
+## 📱 FRONTEND LOGIC REVIEW (`client/js/script.js`)
 
 ### Section 1: Password Visibility Toggle (Lines 1-40)
 
@@ -117,7 +117,7 @@ const getPasswordStrength = (value) => {
 
 ## 🗄️ DATABASE REVIEW
 
-### Connection Pool Setup (db.js)
+### Connection Pool Setup (`server/config/database.js`)
 
 ```javascript
 const db = mysql.createPool({
@@ -156,7 +156,7 @@ User 3 Request ─┴─> (Reuses connections)
 
 Instead of creating a new connection for each request (slow), the pool maintains 10 connections that are reused.
 
-### Connection Error Handling (db.js)
+### Connection Error Handling (`server/config/database.js`)
 
 ```javascript
 db.getConnection((err, connection) => {
@@ -257,7 +257,7 @@ The `.promise()` conversion makes code much cleaner and easier to read.
 
 #### express-rate-limit
 
-**Status**: Installed but not used in server.js
+**Status**: Installed but not used in `server/app.js`
 
 **Recommendation**: Add rate limiting to login endpoint:
 
@@ -277,7 +277,7 @@ app.post("/api/login", loginLimiter, async (req, res) => {
 
 #### cors
 
-**Current Status**: No CORS configuration in server.js
+**Current Status**: No CORS configuration in `server/app.js`
 
 **What It Does**: Allows requests from other domains:
 
@@ -302,13 +302,13 @@ app.use(
 
 ## 📊 HTML PAGES STRUCTURE
 
-### index.html
+### `client/pages/index.html`
 
 - **Purpose**: Landing page
 - **Access**: Public (no login required)
 - **Features**: Product info, CTA buttons to login/signup
 
-### log_in.html
+### `client/pages/log_in.html`
 
 - **Purpose**: User login
 - **Fields**: Email/Username + Password
@@ -317,7 +317,7 @@ app.use(
   - "Forgot Password" link
   - "Sign up" link
 
-### sign_in.html
+### `client/pages/sign_in.html`
 
 - **Purpose**: User registration
 - **Fields**: Username, Email, Location, Birthday, Phone, Password (with strength indicator)
@@ -326,7 +326,7 @@ app.use(
   - Show/hide password toggle
   - Terms acceptance checkbox
 
-### dashboard.html
+### `client/pages/dashboard.html`
 
 - **Purpose**: Main app (authenticated)
 - **Access**: Login required
@@ -339,13 +339,13 @@ app.use(
   - View feedback history
   - Audit logs (login history, etc.)
 
-### forgot_pass.html
+### `client/pages/forgot_pass.html`
 
 - **Purpose**: Password reset request
 - **Fields**: Email address
 - **Process**: Sends reset link to email
 
-### reset_pass.html
+### `client/pages/reset_pass.html`
 
 - **Purpose**: Password reset form
 - **Fields**: New password + confirm password
@@ -428,7 +428,7 @@ app.use(
 | **Testing**           | N/A    | No automated tests visible (consider adding Jest/Mocha)                |
 | **Performance**       | 7.5/10 | Connection pool good, but could optimize queries and add caching       |
 
-**Overall**: 8/10 - **Production-Ready with Minor Improvements**
+**Overall**: 8/10 for the reviewed local-development implementation; do not treat this as a production-readiness approval.
 
 ---
 
@@ -515,4 +515,4 @@ app.use((req, res, next) => {
 
 ---
 
-**Last Updated**: August 29, 2026
+**Last Updated**: September 6, 2026
